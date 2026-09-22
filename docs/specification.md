@@ -217,10 +217,12 @@ Reasons:
 - preserve normal relative URL behavior
 - isolate artifact CSS from the application shell
 - avoid injecting arbitrary HTML into the SPA DOM
-- allow artifact JavaScript policy to evolve independently
+- allow normal browser HTML and JavaScript behavior for published artifacts
 - keep the SPA focused on navigation and discovery
 
-The exact iframe sandbox policy is a security decision to validate during implementation.
+The iframe intentionally has no `sandbox` attribute. Publishing an artifact is the trust boundary: published HTML is treated as approved executable content and can use normal browser capabilities.
+
+Artifacts are served from the same origin as the SPA under `/_artifacts/*`. As a result, an artifact script can access the parent application and other same-origin resources; the iframe separates document structure and CSS, but it is not a security boundary. This product does not isolate hostile publishers. If private or authenticated content, or mutually untrusted publishers, become part of the product, artifact hosting must move to a separate origin and the security model must be revisited before that use case is supported.
 
 The right-hand table of contents should use precomputed index metadata rather than requiring the parent application to inspect the iframe DOM.
 
@@ -427,7 +429,7 @@ Important E2E flows include:
 - sidebar filter → artifact selection
 - deep-link directly to an artifact
 - reload preserves route
-- iframe loads relative artifact assets
+- iframe loads relative artifact assets and executes published scripts
 - TOC navigation reaches an artifact heading
 
 VRT can be introduced later for the stable application shell. Arbitrary artifact contents should not become the primary VRT responsibility.

@@ -17,19 +17,26 @@ test('nginx index listing discovers sites and opens a site home', async ({ page 
   await expect(page.getByRole('heading', { name: 'SRE', exact: true })).toBeVisible()
 })
 
-test('a direct artifact URL survives reload and loads its relative stylesheet', async ({ page }) => {
+test('a direct artifact URL loads relative assets and executes its published script', async ({ page }) => {
   const stylesheetResponse = page.waitForResponse((response) => {
     return new URL(response.url()).pathname === '/_artifacts/sre/incidents/checkout-latency/styles.css'
+  })
+  const scriptResponse = page.waitForResponse((response) => {
+    return new URL(response.url()).pathname === '/_artifacts/sre/incidents/checkout-latency/behavior.js'
   })
 
   const navigationResponse = await page.goto('/sre/incidents/checkout-latency')
   expect(navigationResponse?.status()).toBe(200)
   expect(navigationResponse?.headers()['content-type']).toContain('text/html')
 
+  const iframe = page.locator('iframe[title="Checkout latency incident review"]')
+  expect(await iframe.getAttribute('sandbox')).toBeNull()
   const artifact = page.frameLocator('iframe[title="Checkout latency incident review"]')
   await expect(artifact.getByRole('heading', { name: 'Summary' })).toBeVisible()
   expect((await stylesheetResponse).status()).toBe(200)
+  expect((await scriptResponse).status()).toBe(200)
   await expect(artifact.locator('body')).toHaveCSS('color', 'rgb(31, 41, 55)')
+  await expect(artifact.locator('body')).toHaveAttribute('data-artifact-script', 'ready')
 
   const breadcrumb = page.getByRole('navigation', { name: 'Artifact path' })
   await expect(breadcrumb).toContainText('incidents')
