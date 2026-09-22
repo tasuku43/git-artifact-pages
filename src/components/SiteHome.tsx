@@ -1,14 +1,19 @@
 import { useMemo, useState } from 'react'
 import type { ArtifactIndexEntry, SiteIndex } from '../domain/index'
 import { artifactRouteHref } from '../routing'
+import { ArtifactTree, type TreeStyle } from './ArtifactTree'
 import { Icon } from './Icon'
 
 export function SiteHome({
   index,
   onOpenArtifact,
+  treeStyle = 'branch-guides',
+  defaultExpandedPaths,
 }: {
   index: SiteIndex
   onOpenArtifact: (href: string) => void
+  treeStyle?: TreeStyle
+  defaultExpandedPaths?: string[]
 }) {
   const [query, setQuery] = useState('')
   const artifacts = useMemo(
@@ -23,7 +28,6 @@ export function SiteHome({
           .includes(normalizedQuery),
       )
     : []
-  const groups = useMemo(() => groupArtifacts(artifacts), [artifacts])
 
   return (
     <div className="site-home">
@@ -53,6 +57,7 @@ export function SiteHome({
       {normalizedQuery ? (
         <ArtifactSection
           title={`${matches.length} ${matches.length === 1 ? 'match' : 'matches'}`}
+          icon="search"
           artifacts={matches}
           siteId={index.site.id}
           query={normalizedQuery}
@@ -63,6 +68,7 @@ export function SiteHome({
         <>
           <ArtifactSection
             title="Recently updated"
+            icon="clock"
             artifacts={artifacts.slice(0, 6)}
             siteId={index.site.id}
             onOpenArtifact={onOpenArtifact}
@@ -70,33 +76,18 @@ export function SiteHome({
           />
 
           <section className="browse-section" aria-labelledby="browse-heading">
-            <h2 id="browse-heading">Browse</h2>
-            {groups.length === 0 ? (
+            <h2 className="home-section-title" id="browse-heading">
+              <Icon name="tree" size={13} /> Browse
+            </h2>
+            {index.artifacts.length === 0 ? (
               <p className="empty-note">There are no artifact groups to browse yet.</p>
             ) : (
-              <div className="browse-groups">
-                {groups.map((group) => (
-                  <section className="browse-group" key={group.name}>
-                    <div className="browse-group-heading">
-                      <div>
-                        <h3>{group.name}</h3>
-                        <p className="mono">{group.artifacts.length} artifacts</p>
-                      </div>
-                      <Icon name="folder" size={15} />
-                    </div>
-                    {group.artifacts.map((artifact) => (
-                      <button
-                        className="browse-link"
-                        key={artifact.id}
-                        onClick={() => onOpenArtifact(artifactRouteHref(index.site.id, artifact.path))}
-                      >
-                        <span>{artifact.title}</span>
-                        <Icon name="arrow" size={14} />
-                      </button>
-                    ))}
-                  </section>
-                ))}
-              </div>
+              <ArtifactTree
+                artifacts={index.artifacts}
+                style={treeStyle}
+                defaultExpandedPaths={defaultExpandedPaths}
+                onOpenArtifact={(artifact) => onOpenArtifact(artifactRouteHref(index.site.id, artifact.path))}
+              />
             )}
           </section>
         </>
@@ -107,6 +98,7 @@ export function SiteHome({
 
 function ArtifactSection({
   title,
+  icon,
   artifacts,
   siteId,
   query = '',
@@ -114,6 +106,7 @@ function ArtifactSection({
   emptyMessage,
 }: {
   title: string
+  icon: 'clock' | 'search'
   artifacts: ArtifactIndexEntry[]
   siteId: string
   query?: string
@@ -122,7 +115,7 @@ function ArtifactSection({
 }) {
   return (
     <section className="artifact-list-section" aria-label={title}>
-      <h2>{title}</h2>
+      <h2 className="home-section-title"><Icon name={icon} size={13} />{title}</h2>
       {artifacts.length === 0 ? (
         <p className="empty-note">{emptyMessage}</p>
       ) : (
@@ -146,27 +139,10 @@ function ArtifactSection({
   )
 }
 
-function groupArtifacts(artifacts: ArtifactIndexEntry[]) {
-  const groups = new Map<string, ArtifactIndexEntry[]>()
-
-  for (const artifact of artifacts) {
-    const [firstSegment] = artifact.path.split('/').filter(Boolean)
-    const name = firstSegment || 'Other'
-    const group = groups.get(name) ?? []
-    group.push(artifact)
-    groups.set(name, group)
-  }
-
-  return [...groups.entries()]
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([name, groupArtifacts]) => ({ name, artifacts: groupArtifacts }))
-}
-
 function highlight(text: string, query: string) {
   if (!query) return text
   const index = text.toLocaleLowerCase().indexOf(query)
   if (index < 0) return text
-
   return (
     <>
       {text.slice(0, index)}

@@ -3,6 +3,7 @@ import { CommandPalette, type PaletteCommand } from './CommandPalette'
 import { Icon } from './Icon'
 import { Sidebar } from './Sidebar'
 import { SiteHome } from './SiteHome'
+import type { TreeStyle } from './ArtifactTree'
 import type { ArtifactIndexEntry, SiteIndex, SiteSummary } from '../domain/index'
 import { artifactRouteHref, type AppRoute } from '../routing'
 
@@ -18,6 +19,8 @@ export function ArtifactWorkspace({
   theme,
   onToggleTheme,
   index,
+  treeStyle = 'branch-guides',
+  initialExpandedPaths = [],
 }: {
   route: SiteRoute
   pathname: string
@@ -28,12 +31,14 @@ export function ArtifactWorkspace({
   theme: 'light' | 'dark'
   onToggleTheme: () => void
   index: SiteIndex
+  treeStyle?: TreeStyle
+  initialExpandedPaths?: string[]
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [tocOpen, setTocOpen] = useState(false)
   const [paletteSeed, setPaletteSeed] = useState<string | null>(null)
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(
-    () => new Set(folderAncestors(route.artifactPath)),
+    () => new Set([...folderAncestors(route.artifactPath), ...initialExpandedPaths]),
   )
   const [toast, setToast] = useState<string | null>(null)
   const toastTimer = useRef<number | undefined>(undefined)
@@ -171,6 +176,7 @@ export function ArtifactWorkspace({
         onToggleTheme={onToggleTheme}
         theme={theme}
         onClose={() => setSidebarOpen(false)}
+        treeStyle={treeStyle}
       />
       {sidebarOpen ? <button className="sidebar-backdrop" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} /> : null}
 
@@ -283,7 +289,12 @@ export function ArtifactWorkspace({
                 </button>
               </div>
             ) : (
-              <SiteHome index={index} onOpenArtifact={navigate} />
+              <SiteHome
+                index={index}
+                onOpenArtifact={navigate}
+                treeStyle={treeStyle}
+                defaultExpandedPaths={initialExpandedPaths}
+              />
             )}
 
             {tocOpen && currentArtifact ? (

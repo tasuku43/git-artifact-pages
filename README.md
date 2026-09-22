@@ -45,7 +45,7 @@ Run the isolated UI design workspace with:
 npm run storybook
 ~~~
 
-Storybook uses the same React components and CSS as the application, with the committed site indexes and artifact fixtures. Open the **Product / Workspace** stories for the site home, artifact viewer, and theme variants; the **Navigation** stories cover the site picker, sidebar, and command-palette search modes.
+Storybook uses the same React components and CSS as the application, with the committed site indexes and artifact fixtures. Open **Product / Site home** or **Navigation / Tree directions** to compare three browse-tree treatments—quiet indentation, subtle branch guides, and full path labels—using fixtures with up to four directory levels. The **Product / Workspace** stories show the tree in context with the artifact viewer; other **Navigation** stories cover the site picker and command-palette search modes.
 
 Create a production build with:
 

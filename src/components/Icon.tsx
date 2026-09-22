@@ -11,6 +11,8 @@ type IconName =
   | 'moon'
   | 'sun'
   | 'arrow'
+  | 'clock'
+  | 'tree'
 
 export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
   const common = {
@@ -50,5 +52,9 @@ export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
       return <svg {...common}><circle cx="8" cy="8" r="3" /><path d="M8 1.5v1.3M8 13.2v1.3M14.5 8h-1.3M2.8 8H1.5m11.1-4.6-.9.9m-7.4 7.4-.9.9m9.2 0-.9-.9M4.3 4.3l-.9-.9" /></svg>
     case 'arrow':
       return <svg {...common}><path d="M3 8h9m-3.5-3.5L12 8l-3.5 3.5" /></svg>
+    case 'clock':
+      return <svg {...common}><circle cx="8" cy="8" r="5.7" /><path d="M8 4.8v3.4l2.1 1.2" /></svg>
+    case 'tree':
+      return <svg {...common}><path d="M4.2 3v10m0-7.5h6.9m-6.9 5h6.9" /><circle cx="4.2" cy="3" r="1" /><circle cx="11.1" cy="5.5" r="1" /><circle cx="11.1" cy="10.5" r="1" /></svg>
   }
 }

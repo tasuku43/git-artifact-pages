@@ -1,32 +1,31 @@
 import { useEffect, useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import sreIndex from '../../fixtures/storage/_indexes/sre.json'
-import frontendIndex from '../../fixtures/storage/_indexes/frontend.json'
 import { ArtifactWorkspace } from './ArtifactWorkspace'
 import { parseRoute, type AppRoute } from '../routing'
-import type { SiteIndex } from '../domain/index'
+import { deepExpandedPaths, deepSreIndex, storyIndexes, treeStyleOptions } from '../stories/fixtures'
 
-const indexes = [sreIndex, frontendIndex] as SiteIndex[]
+const indexes = storyIndexes
 
 type WorkspaceStoryArgs = {
   view: 'site-home' | 'artifact'
   theme: 'light' | 'dark'
+  treeStyle: typeof treeStyleOptions[number]
 }
 
-function WorkspaceStory({ view, theme }: WorkspaceStoryArgs) {
+function WorkspaceStory({ view, theme, treeStyle }: WorkspaceStoryArgs) {
   const [route, setRoute] = useState<Extract<AppRoute, { kind: 'site' }>>(() => ({
     kind: 'site',
-    siteId: 'sre',
+    siteId: deepSreIndex.site.id,
     artifactPath: view === 'artifact' ? 'incidents/checkout-latency' : undefined,
   }))
   const [hash, setHash] = useState('')
   const [activeTheme, setActiveTheme] = useState(theme)
-  const index = indexes.find(({ site }) => site.id === route.siteId) ?? sreIndex
+  const index = indexes.find(({ site }) => site.id === route.siteId) ?? deepSreIndex
 
   useEffect(() => {
     setRoute({
       kind: 'site',
-      siteId: 'sre',
+      siteId: deepSreIndex.site.id,
       artifactPath: view === 'artifact' ? 'incidents/checkout-latency' : undefined,
     })
     setHash('')
@@ -60,6 +59,8 @@ function WorkspaceStory({ view, theme }: WorkspaceStoryArgs) {
       theme={activeTheme}
       onToggleTheme={() => setActiveTheme((current) => current === 'light' ? 'dark' : 'light')}
       index={index}
+      treeStyle={treeStyle}
+      initialExpandedPaths={deepExpandedPaths}
     />
   )
 }
@@ -69,6 +70,7 @@ const meta = {
   args: {
     view: 'artifact',
     theme: 'light',
+    treeStyle: 'branch-guides',
   },
   argTypes: {
     view: {
@@ -79,6 +81,11 @@ const meta = {
     theme: {
       control: 'radio',
       options: ['light', 'dark'],
+    },
+    treeStyle: {
+      control: 'radio',
+      options: treeStyleOptions,
+      description: 'Compare hierarchy and selection treatments across the sidebar and site-home browse tree.',
     },
   },
   render: (args: WorkspaceStoryArgs) => <WorkspaceStory {...args} />,

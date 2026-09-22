@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import sreIndex from '../../fixtures/storage/_indexes/sre.json'
-import frontendIndex from '../../fixtures/storage/_indexes/frontend.json'
-import type { ArtifactIndexEntry, SiteIndex } from '../domain/index'
+import type { AppRoute } from '../routing'
+import type { PaletteCommand } from './CommandPalette'
+import { CommandPalette } from './CommandPalette'
 import { Sidebar } from './Sidebar'
-import { CommandPalette, type PaletteCommand } from './CommandPalette'
+import { deepExpandedPaths, deepSreIndex, storyIndexes, treeStyleOptions } from '../stories/fixtures'
 
-const indexes = [sreIndex, frontendIndex] as SiteIndex[]
+type SidebarStoryArgs = {
+  theme: 'light' | 'dark'
+  treeStyle: typeof treeStyleOptions[number]
+}
 
-type SidebarStoryArgs = { theme: 'light' | 'dark' }
-
-function SidebarStory({ theme }: SidebarStoryArgs) {
-  const [activeIndex, setActiveIndex] = useState(sreIndex as SiteIndex)
-  const [artifactPath, setArtifactPath] = useState('incidents/checkout-latency')
-  const [expandedPaths, setExpandedPaths] = useState(() => new Set(['incidents', 'architecture']))
+function SidebarStory({ theme, treeStyle }: SidebarStoryArgs) {
+  const [activeIndex, setActiveIndex] = useState(deepSreIndex)
+  const [artifactPath, setArtifactPath] = useState<string | undefined>(
+    'incidents/2026/q3/checkout/latency-review',
+  )
+  const [expandedPaths, setExpandedPaths] = useState(() => new Set(deepExpandedPaths))
   const [paletteSeed, setPaletteSeed] = useState<string | null>(null)
   const [activeTheme, setActiveTheme] = useState(theme)
   const commands: PaletteCommand[] = [
@@ -28,38 +31,41 @@ function SidebarStory({ theme }: SidebarStoryArgs) {
 
   const activeArtifact = activeIndex.artifacts.find((artifact) => artifact.path === artifactPath)
 
+  function navigate(href: string) {
+    const route = parseRoute(href)
+    if (route.kind !== 'site') return
+    const nextIndex = storyIndexes.find(({ site }) => site.id === route.siteId)
+    if (!nextIndex) return
+    setActiveIndex(nextIndex)
+    setArtifactPath(route.artifactPath)
+    setPaletteSeed(null)
+  }
+
   return (
     <div style={{ display: 'flex', width: '100%', height: '100vh', background: 'var(--shell)' }}>
       <Sidebar
         index={activeIndex}
-        sites={indexes.map(({ site }) => site)}
+        sites={storyIndexes.map(({ site }) => site)}
         artifactPath={artifactPath}
         expandedPaths={expandedPaths}
         onExpandedPathsChange={setExpandedPaths}
         onOpenPalette={setPaletteSeed}
-        onOpenArtifact={(artifact: ArtifactIndexEntry) => setArtifactPath(artifact.path)}
+        onOpenArtifact={(artifact) => setArtifactPath(artifact.path)}
         onToggleTheme={() => setActiveTheme((current) => current === 'light' ? 'dark' : 'light')}
         theme={activeTheme}
         onClose={() => undefined}
+        treeStyle={treeStyle}
       />
       {paletteSeed !== null ? (
         <CommandPalette
           seed={paletteSeed}
-          indexes={indexes}
+          indexes={storyIndexes}
           currentIndex={activeIndex}
           currentArtifact={activeArtifact}
           commands={commands}
           loading={false}
           onClose={() => setPaletteSeed(null)}
-          onNavigate={(href) => {
-            const siteId = href.split('/').filter(Boolean)[0]
-            const nextIndex = indexes.find(({ site }) => site.id === siteId)
-            if (nextIndex) {
-              setActiveIndex(nextIndex)
-              setArtifactPath(href.split('/').filter(Boolean).slice(1).join('/'))
-            }
-            setPaletteSeed(null)
-          }}
+          onNavigate={navigate}
           onJumpToHeading={() => setPaletteSeed(null)}
         />
       ) : null}
@@ -67,11 +73,24 @@ function SidebarStory({ theme }: SidebarStoryArgs) {
   )
 }
 
+function parseRoute(href: string): AppRoute {
+  const pathname = new URL(href, window.location.origin).pathname
+  const segments = pathname.split('/').filter(Boolean)
+  if (segments.length === 0) return { kind: 'sites' }
+  const [siteId, ...artifactPath] = segments
+  return { kind: 'site', siteId, artifactPath: artifactPath.length ? artifactPath.join('/') : undefined }
+}
+
 const meta = {
-  title: 'Navigation/Sidebar',
-  args: { theme: 'light' },
+  title: 'Navigation/Tree directions',
+  args: { theme: 'dark', treeStyle: 'branch-guides' },
   argTypes: {
     theme: { control: 'radio', options: ['light', 'dark'] },
+    treeStyle: {
+      control: 'radio',
+      options: treeStyleOptions,
+      description: 'Compare indentation, helper lines, and selection treatment using the same deep fixture.',
+    },
   },
   render: (args: SidebarStoryArgs) => <SidebarStory {...args} />,
 } satisfies Meta<SidebarStoryArgs>
@@ -79,8 +98,20 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const ArtifactTree: Story = {}
+export const AQuietIndent: Story = {
+  name: 'A · Quiet indent',
+  args: { treeStyle: 'quiet' },
+  parameters: { docs: { description: { story: 'No connector lines or bullets; depth is communicated by consistent indentation.' } } },
+}
 
-export const Dark: Story = {
-  args: { theme: 'dark' },
+export const BBranchGuides: Story = {
+  name: 'B · Branch guides',
+  args: { treeStyle: 'branch-guides' },
+  parameters: { docs: { description: { story: 'Subtle guide rails clarify open branches without adding file bullets.' } } },
+}
+
+export const CPathList: Story = {
+  name: 'C · Path labels',
+  args: { treeStyle: 'path-list' },
+  parameters: { docs: { description: { story: 'A flatter alternative with each full path shown beneath its artifact title.' } } },
 }

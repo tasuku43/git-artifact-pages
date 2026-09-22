@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ArtifactIndexEntry, SiteIndex, SiteSummary } from '../domain/index'
-import { buildArtifactTree, countArtifacts, flattenArtifacts, type ArtifactTreeNode } from '../domain/tree'
+import { ArtifactTree, type TreeStyle } from './ArtifactTree'
 import { Icon } from './Icon'
 
 export function Sidebar({
@@ -14,6 +14,7 @@ export function Sidebar({
   onToggleTheme,
   theme,
   onClose,
+  treeStyle = 'branch-guides',
 }: {
   index: SiteIndex
   sites: SiteSummary[]
@@ -25,9 +26,9 @@ export function Sidebar({
   onToggleTheme: () => void
   theme: 'light' | 'dark'
   onClose: () => void
+  treeStyle?: TreeStyle
 }) {
   const [query, setQuery] = useState('')
-  const tree = useMemo(() => buildArtifactTree(index.artifacts), [index.artifacts])
   const normalizedQuery = query.trim().toLocaleLowerCase()
   const recent = useMemo(
     () => [...index.artifacts]
@@ -35,10 +36,7 @@ export function Sidebar({
       .slice(0, 4),
     [index.artifacts],
   )
-  const filteredArtifacts = useMemo(
-    () => flattenArtifacts(tree).filter((artifact) => matches(artifact, normalizedQuery)),
-    [tree, normalizedQuery],
-  )
+  const matchCount = index.artifacts.filter((artifact) => matches(artifact, normalizedQuery)).length
 
   useEffect(() => {
     const ancestors = folderAncestors(artifactPath)
@@ -47,68 +45,8 @@ export function Sidebar({
     }
   }, [artifactPath, onExpandedPathsChange])
 
-  function toggleDirectory(path: string) {
-    onExpandedPathsChange((current) => {
-      const next = new Set(current)
-      if (next.has(path)) next.delete(path)
-      else next.add(path)
-      return next
-    })
-  }
-
-  function renderNode(node: ArtifactTreeNode, depth: number): React.ReactNode {
-    const directories = [...node.directories.values()].filter(
-      (directory) => !normalizedQuery || countMatching(directory, normalizedQuery) > 0,
-    )
-    const files = node.artifacts.filter((artifact) => matches(artifact, normalizedQuery))
-
-    return (
-      <>
-        {directories.map((directory) => {
-          const expanded = normalizedQuery.length > 0 || expandedPaths.has(directory.path)
-          const count = normalizedQuery
-            ? countMatching(directory, normalizedQuery)
-            : countArtifacts(directory)
-
-          return (
-            <div className="tree-directory" key={directory.path}>
-              <button
-                className="tree-directory-button"
-                style={{ paddingInlineStart: `${9 + depth * 14}px` }}
-                aria-expanded={expanded}
-                onClick={() => toggleDirectory(directory.path)}
-              >
-                <Icon name="chevron" size={11} />
-                <span className="tree-label">{highlight(directory.name, normalizedQuery)}</span>
-                <span className="tree-count">{count}</span>
-              </button>
-              {expanded ? (
-                <div className="tree-children">
-                  {renderNode(directory, depth + 1)}
-                </div>
-              ) : null}
-            </div>
-          )
-        })}
-        {files.map((artifact) => (
-          <button
-            className={`tree-artifact${artifact.path === artifactPath ? ' is-active' : ''}`}
-            key={artifact.id}
-            style={{ paddingInlineStart: `${10 + depth * 14}px` }}
-            title={artifact.path}
-            aria-current={artifact.path === artifactPath ? 'page' : undefined}
-            onClick={() => onOpenArtifact(artifact)}
-          >
-            <span className="tree-artifact-mark" aria-hidden="true" />
-            <span className="tree-label">{highlight(artifact.title, normalizedQuery)}</span>
-          </button>
-        ))}
-      </>
-    )
-  }
-
   return (
-    <aside className="sidebar-panel" aria-label={`${index.site.title} navigation`}>
+    <aside className={`sidebar-panel tree-style-${treeStyle}`} aria-label={`${index.site.title} navigation`}>
       <div className="sidebar-top">
         <div className="sidebar-top-row">
           <button
@@ -141,8 +79,9 @@ export function Sidebar({
               if (event.key === 'Escape') {
                 setQuery('')
                 event.currentTarget.blur()
-              } else if (event.key === 'Enter' && filteredArtifacts[0]) {
-                onOpenArtifact(filteredArtifacts[0])
+              } else if (event.key === 'Enter') {
+                const first = index.artifacts.find((artifact) => matches(artifact, normalizedQuery))
+                if (first) onOpenArtifact(first)
               }
             }}
           />
@@ -163,35 +102,63 @@ export function Sidebar({
         {normalizedQuery ? (
           <div className="sidebar-section">
             <div className="sidebar-section-title">
-              <span>Matches</span><span className="mono">{filteredArtifacts.length}</span>
+              <span className="sidebar-section-label"><Icon name="search" size={12} />Matches</span>
+              <span className="mono">{matchCount}</span>
             </div>
-            {filteredArtifacts.length === 0 ? (
+            {matchCount === 0 ? (
               <p className="sidebar-empty">
                 Nothing in {index.site.title} matches.<br />
                 <span>Press ⌘ K to search other sites.</span>
               </p>
-            ) : renderNode(tree, 0)}
+            ) : (
+              <ArtifactTree
+                artifacts={index.artifacts}
+                activePath={artifactPath}
+                query={normalizedQuery}
+                style={treeStyle}
+                view={treeStyle === 'path-list' ? 'paths' : 'tree'}
+                expandedPaths={expandedPaths}
+                onExpandedPathsChange={onExpandedPathsChange}
+                onOpenArtifact={onOpenArtifact}
+              />
+            )}
           </div>
         ) : (
           <>
             <div className="sidebar-section">
               <div className="sidebar-section-title">
-                <span>Recently updated</span><span className="mono">{recent.length}</span>
+                <span className="sidebar-section-label"><Icon name="clock" size={12} />Recently updated</span>
+                <span className="mono">{recent.length}</span>
               </div>
-              {recent.map((artifact) => (
-                <ArtifactTreeRow
-                  key={artifact.id}
-                  artifact={artifact}
-                  active={artifact.path === artifactPath}
-                  onClick={() => onOpenArtifact(artifact)}
+              {recent.length === 0 ? (
+                <p className="sidebar-empty">No artifacts have been published yet.</p>
+              ) : (
+                <ArtifactTree
+                  artifacts={recent}
+                  activePath={artifactPath}
+                  style={treeStyle}
+                  view="recent"
+                  onOpenArtifact={onOpenArtifact}
                 />
-              ))}
+              )}
             </div>
             <div className="sidebar-section browse-tree">
-              <div className="sidebar-section-title"><span>Browse</span></div>
+              <div className="sidebar-section-title">
+                <span className="sidebar-section-label"><Icon name="tree" size={12} />Browse</span>
+              </div>
               {index.artifacts.length === 0 ? (
                 <p className="sidebar-empty">No artifacts have been published yet.</p>
-              ) : renderNode(tree, 0)}
+              ) : (
+                <ArtifactTree
+                  artifacts={index.artifacts}
+                  activePath={artifactPath}
+                  style={treeStyle}
+                  view={treeStyle === 'path-list' ? 'paths' : 'tree'}
+                  expandedPaths={expandedPaths}
+                  onExpandedPathsChange={onExpandedPathsChange}
+                  onOpenArtifact={onOpenArtifact}
+                />
+              )}
             </div>
           </>
         )}
@@ -214,55 +181,15 @@ export function Sidebar({
   )
 }
 
-function ArtifactTreeRow({
-  artifact,
-  active,
-  onClick,
-}: {
-  artifact: ArtifactIndexEntry
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      className={`tree-artifact${active ? ' is-active' : ''}`}
-      title={artifact.path}
-      aria-current={active ? 'page' : undefined}
-      onClick={onClick}
-    >
-      <span className="tree-artifact-mark" aria-hidden="true" />
-      <span className="tree-label">{artifact.title}</span>
-    </button>
-  )
-}
-
 function matches(artifact: ArtifactIndexEntry, query: string) {
   if (!query) return true
   return `${artifact.title} ${artifact.path} ${artifact.filename ?? ''}`.toLocaleLowerCase().includes(query)
-}
-
-function countMatching(node: ArtifactTreeNode, query: string): number {
-  return node.artifacts.filter((artifact) => matches(artifact, query)).length
-    + [...node.directories.values()].reduce((total, directory) => total + countMatching(directory, query), 0)
 }
 
 function folderAncestors(path?: string) {
   if (!path) return []
   const segments = path.split('/').filter(Boolean).slice(0, -1)
   return segments.map((_, index) => segments.slice(0, index + 1).join('/'))
-}
-
-function highlight(text: string, query: string) {
-  if (!query) return text
-  const index = text.toLocaleLowerCase().indexOf(query)
-  if (index < 0) return text
-  return (
-    <>
-      {text.slice(0, index)}
-      <mark>{text.slice(index, index + query.length)}</mark>
-      {text.slice(index + query.length)}
-    </>
-  )
 }
 
 function formatDate(value: string) {

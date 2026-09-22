@@ -322,6 +322,7 @@ kbd {
 
 .sidebar-section-title {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
   padding: 0 8px;
@@ -334,6 +335,19 @@ kbd {
 
 .sidebar-section-title .mono {
   font-size: 10px;
+}
+
+.sidebar-section-label {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-section-label svg {
+  flex: none;
+  color: var(--text-tertiary);
+  opacity: 0.9;
 }
 
 .tree-directory-button,
@@ -392,10 +406,17 @@ kbd {
 
 .tree-children {
   position: relative;
+}
+
+.tree-children-quiet {
+  margin-left: 0;
+}
+
+.tree-children-branch-guides {
   margin-left: 14px;
 }
 
-.tree-children::before {
+.tree-children-branch-guides::before {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -405,19 +426,21 @@ kbd {
   content: "";
 }
 
+.tree-style-branch-guides .tree-directory-button[data-tree-depth]:not([data-tree-depth="0"])::before,
+.tree-style-branch-guides .tree-artifact[data-tree-depth]:not([data-tree-depth="0"])::before {
+  position: absolute;
+  top: 50%;
+  left: -14px;
+  width: 14px;
+  height: 1px;
+  background: var(--line-soft);
+  content: "";
+  transform: translateY(-50%);
+}
+
 .tree-artifact {
   gap: 8px;
   font-size: 12px;
-}
-
-.tree-artifact-mark {
-  width: 4px;
-  height: 4px;
-  flex: none;
-  margin: 0 2px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.34;
 }
 
 .tree-artifact.is-active {
@@ -436,6 +459,53 @@ kbd {
   background: var(--mark);
   content: "";
   transform: translateY(-50%);
+}
+
+.tree-path-row {
+  align-items: flex-start;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.tree-path-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tree-path-copy > .tree-label {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tree-artifact.is-active .tree-path-copy > .tree-label {
+  color: var(--text);
+}
+
+.tree-path {
+  overflow: hidden;
+  color: var(--text-tertiary);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-style-quiet .tree-artifact.is-active::after,
+.tree-style-branch-guides .tree-artifact.is-active::after,
+.tree-style-path-list .tree-artifact.is-active::after {
+  display: block;
+}
+
+.tree-style-path-list .tree-children {
+  display: none;
+}
+
+.tree-view-recent .tree-artifact,
+.sidebar-section .tree-view-paths .tree-artifact {
+  min-height: 27px;
 }
 
 mark {
@@ -746,10 +816,19 @@ mark {
 
 .artifact-list-section h2,
 .browse-section > h2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   margin: 0 0 5px;
   color: var(--text-tertiary);
   font-size: 11px;
   font-weight: 550;
+}
+
+.home-section-title svg {
+  flex: none;
+  color: var(--text-tertiary);
+  opacity: 0.9;
 }
 
 .artifact-list {
@@ -813,73 +892,26 @@ mark {
   padding-bottom: 60px;
 }
 
-.browse-groups {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 24px 30px;
-  margin-top: 13px;
+.browse-section .artifact-tree {
+  max-width: 780px;
+  margin-top: 10px;
 }
 
-.browse-group {
-  min-width: 0;
-}
-
-.browse-group-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 7px;
-  color: var(--text-tertiary);
-}
-
-.browse-group-heading h3 {
-  margin: 0;
-  color: var(--text);
+.site-home .tree-directory-button,
+.site-home .tree-artifact {
+  padding-top: 7px;
+  padding-bottom: 7px;
   font-size: 13px;
-  font-weight: 600;
 }
 
-.browse-group-heading p {
-  margin: 2px 0 0;
-  color: var(--text-tertiary);
-  font-size: 9px;
+.site-home .tree-children-branch-guides {
+  margin-left: 16px;
 }
 
-.browse-link {
-  display: flex;
-  width: 100%;
-  min-width: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 4px 0;
-  color: var(--text-secondary);
-  text-align: left;
-  font-size: 11.5px;
-}
-
-.browse-link span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.browse-link svg {
-  flex: none;
-  opacity: 0;
-  transform: translateX(-3px);
-  transition: opacity 120ms ease, transform 120ms ease;
-}
-
-.browse-link:hover {
-  color: var(--text);
-}
-
-.browse-link:hover svg {
-  opacity: 1;
-  transform: translateX(0);
+.site-home .tree-style-branch-guides .tree-directory-button[data-tree-depth]:not([data-tree-depth="0"])::before,
+.site-home .tree-style-branch-guides .tree-artifact[data-tree-depth]:not([data-tree-depth="0"])::before {
+  left: -16px;
+  width: 16px;
 }
 
 .empty-note {
