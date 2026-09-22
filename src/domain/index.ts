@@ -1,0 +1,33 @@
+export type SiteSummary = {
+  id: string
+  title: string
+}
+
+export type TocEntry = {
+  level: number
+  text: string
+  id: string
+}
+
+export type ArtifactSource = {
+  repository: string
+  ref: string
+}
+
+export type ArtifactIndexEntry = {
+  id: string
+  title: string
+  path: string
+  filename?: string
+  artifactUrl: string
+  updatedAt: string
+  source?: ArtifactSource
+  toc?: TocEntry[]
+}
+
+export type SiteIndex = {
+  schemaVersion: number
+  site: SiteSummary
+  generatedAt: string
+  artifacts: ArtifactIndexEntry[]
+}

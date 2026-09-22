@@ -25,14 +25,17 @@ select {
 }
 
 .app-shell {
-  display: grid;
+  display: flex;
   min-height: 100vh;
-  place-content: center;
   padding: 2rem;
   background:
     radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.18), transparent 42rem),
     #0f172a;
-  text-align: center;
+}
+
+.app-content {
+  width: min(100%, 56rem);
+  margin: auto;
 }
 
 .eyebrow {
@@ -51,8 +54,63 @@ h1 {
   letter-spacing: -0.05em;
 }
 
-.description {
+.app-content > p:not(.eyebrow) {
   margin: 1rem 0 0;
   color: #94a3b8;
   font-size: 1.05rem;
+}
+
+.route-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 2rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #334155;
+  border-radius: 0.5rem;
+  background: rgba(15, 23, 42, 0.7);
+}
+
+a {
+  color: #7dd3fc;
+}
+
+code {
+  color: #94a3b8;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+.metadata {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.75rem 1rem;
+  margin: 2rem 0;
+  color: #cbd5e1;
+}
+
+.metadata dt {
+  color: #94a3b8;
+}
+
+.metadata dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.navigation-link {
+  margin-top: 2rem !important;
+}
+
+.error-message {
+  color: #fda4af !important;
 }
