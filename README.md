@@ -46,7 +46,7 @@ npm run build
 npm run preview
 ~~~
 
-The current SPA is intentionally only a Hello World shell. The fixture projection under `fixtures/storage/` is not wired into the application yet.
+The current SPA discovers per-site indexes from `/_indexes/`, resolves site and artifact routes, and reports basic loading/error states. The final navigation, search, and artifact viewer UI are not implemented yet.
 
 To serve the production build with the local nginx contract:
 

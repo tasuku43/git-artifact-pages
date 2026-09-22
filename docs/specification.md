@@ -114,7 +114,6 @@ The initial projection shape is:
 ├── index.html
 ├── assets/
 ├── _indexes/
-│   ├── sites.json
 │   ├── sre.json
 │   ├── frontend.json
 │   └── platform.json
@@ -126,23 +125,13 @@ The initial projection shape is:
 
 ### 5.1 Site discovery
 
-/_indexes/sites.json is a low-frequency registry projection used by the root route to discover available sites.
+The local reference implementation discovers available sites from the directory listing at `/_indexes/`, then loads each per-site index file.
 
-It changes when sites are onboarded, renamed, or removed. It does **not** change for each artifact publication.
+Each `<site>.json` file is the source of that site's display metadata. No separate `sites.json` registry is required for the local product.
 
-Example:
+The directory listing changes when sites are onboarded, renamed, or removed. It does **not** change for each artifact publication unless the set of site files changes.
 
-~~~json
-{
-  "schemaVersion": 1,
-  "sites": [
-    { "id": "sre", "title": "SRE" },
-    { "id": "frontend", "title": "Frontend" }
-  ]
-}
-~~~
-
-If a future implementation derives site discovery from another static registry representation, this file may evolve. The requirement is that root site selection remains serverless.
+An object-storage/CDN adapter may provide an equivalent static listing or a generated catalog. The production representation is intentionally not fixed by the local milestone; the requirement is that root site selection remains serverless.
 
 ### 5.2 Per-site index
 
@@ -256,7 +245,7 @@ Target layout:
 
 ### Site home
 
-/:site loads /_indexes/<site>.json and initially presents recent artifacts, expected to start with roughly the latest 10 entries.
+/:site discovers and loads /_indexes/<site>.json and initially presents recent artifacts, expected to start with roughly the latest 10 entries.
 
 ### Search
 
@@ -558,7 +547,7 @@ Multiple repositories may contribute to one site.
 
 Mount paths within one site must not overlap.
 
-The browser consumes per-site indexes rather than listing object storage.
+The browser consumes per-site indexes discovered through the local `/_indexes/` listing; it does not use browser-side object-storage ListObjects APIs.
 
 Artifacts live under /_artifacts.
 

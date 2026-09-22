@@ -19,7 +19,7 @@ Do not implement AWS infrastructure, Terraform, GitHub Actions publishing, or a 
 - committed fixtures model the future object-storage projection
 - generated local output, when introduced, belongs under .local/ and stays untracked
 - artifacts should be rendered in an iframe rather than injected into the SPA DOM
-- the SPA should consume index metadata rather than list storage at runtime
+- the SPA should consume per-site index metadata; local discovery may use the nginx directory listing for `/_indexes/`
 
 ## Product boundaries
 
