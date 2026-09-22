@@ -45,7 +45,7 @@ Run the isolated UI design workspace with:
 npm run storybook
 ~~~
 
-Storybook uses the same React components and CSS as the application, with the committed site indexes and artifact fixtures. The workspace defaults to full-path labels on Site Home, branch guides in the sidebar, and a grouped command palette. Open **Product / Site home** or **Navigation / Tree directions** to compare the three browse-tree treatments—quiet indentation, subtle branch guides, and full path labels—using fixtures with up to four directory levels. Other **Navigation** stories cover the site picker and command-palette search modes.
+Storybook uses the same React components and CSS as the application, with the committed site indexes and artifact fixtures. Site Home uses full-path labels, while the artifact sidebar uses subtle branch guides. The **Product / Workspace** stories cover site home, artifact viewing, light and dark themes, and the collapsed Reader rail. **Navigation** stories cover the site picker and command-palette search modes.
 
 Create a production build with:
 
@@ -68,6 +68,15 @@ npm run serve:local
 ~~~
 
 This serves the SPA on `http://localhost:4173/`, fixture indexes below `/_indexes/`, and fixture artifacts below `/_artifacts/`. Any other route falls back to the SPA shell.
+
+On first use, install the Playwright Chromium browser, then run the end-to-end checks against the production build served by nginx:
+
+~~~sh
+npx playwright install chromium
+npm run test:e2e
+~~~
+
+The command builds the SPA first, starts an isolated Compose nginx service on port `4174`, and removes that test service when finished. The regular local service on `4173` is left untouched. Docker Compose and the Playwright Chromium browser are required. Tests cover site discovery, deep-link/reload behavior, relative artifact assets, and the collapsed navigation rail.
 
 ## Core ideas
 

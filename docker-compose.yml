@@ -2,7 +2,7 @@ services:
   web:
     image: nginx:1.29-alpine
     ports:
-      - "4173:80"
+      - "${WEB_PORT:-4173}:80"
     volumes:
       - ./dist:/usr/share/nginx/html:ro
       - ./fixtures/storage:/usr/share/nginx/storage:ro

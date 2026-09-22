@@ -9,13 +9,16 @@
     "build-storybook": "storybook build",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "serve:local": "npm run build && docker compose up"
+    "serve:local": "npm run build && docker compose up",
+    "pretest:e2e": "npm run build",
+    "test:e2e": "node scripts/run-e2e.mjs"
   },
   "dependencies": {
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@storybook/react-vite": "^10.6.0",
     "@types/node": "^26.6.2",
     "@types/react": "^19.2.7",
