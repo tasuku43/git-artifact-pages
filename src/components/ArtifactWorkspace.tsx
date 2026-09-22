@@ -22,6 +22,7 @@ export function ArtifactWorkspace({
   sidebarTreeStyle = 'branch-guides',
   siteHomeTreeStyle = 'path-list',
   initialExpandedPaths = [],
+  initialSidebarOpen = true,
 }: {
   route: SiteRoute
   pathname: string
@@ -35,8 +36,10 @@ export function ArtifactWorkspace({
   sidebarTreeStyle?: TreeStyle
   siteHomeTreeStyle?: TreeStyle
   initialExpandedPaths?: string[]
+  initialSidebarOpen?: boolean
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(initialSidebarOpen)
+  const sidebarOpenRef = useRef(initialSidebarOpen)
   const [tocOpen, setTocOpen] = useState(false)
   const [paletteSeed, setPaletteSeed] = useState<string | null>(null)
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(
@@ -54,6 +57,20 @@ export function ArtifactWorkspace({
     setExpandedPaths(update)
   }, [])
 
+  const updateSidebarOpen = useCallback((open: boolean, restoreFocus = false) => {
+    sidebarOpenRef.current = open
+    setSidebarOpen(open)
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => {
+        document.getElementById(open ? 'site-switcher' : 'sidebar-toggle-trigger')?.focus()
+      })
+    }
+  }, [])
+
+  const toggleSidebar = useCallback((restoreFocus = false) => {
+    updateSidebarOpen(!sidebarOpenRef.current, restoreFocus)
+  }, [updateSidebarOpen])
+
   const openPalette = useCallback((seed: string) => {
     const activeElement = document.activeElement
     paletteReturnFocus.current = activeElement instanceof HTMLElement && activeElement !== document.body
@@ -66,12 +83,16 @@ export function ArtifactWorkspace({
     setPaletteSeed(null)
     window.requestAnimationFrame(() => {
       const target = paletteReturnFocus.current
-      if (target?.isConnected) target.focus()
+      if (target?.isConnected && target.getClientRects().length > 0) target.focus()
       else document.getElementById('sidebar-toggle-trigger')?.focus()
     })
   }, [])
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), [])
+
+  useEffect(() => {
+    updateSidebarOpen(initialSidebarOpen)
+  }, [initialSidebarOpen, updateSidebarOpen])
 
   useEffect(() => {
     setTocOpen(false)
@@ -88,7 +109,7 @@ export function ArtifactWorkspace({
         closePalette()
       } else if (modifier && key === 'b') {
         event.preventDefault()
-        setSidebarOpen((current) => !current)
+        toggleSidebar()
       } else if (modifier && event.shiftKey && key === 'o') {
         event.preventDefault()
         setTocOpen((current) => !current)
@@ -98,7 +119,7 @@ export function ArtifactWorkspace({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [paletteSeed, closePalette])
+  }, [paletteSeed, closePalette, toggleSidebar])
 
   useEffect(() => {
     if (paletteSeed !== null) return
@@ -111,7 +132,7 @@ export function ArtifactWorkspace({
         openPalette('')
       } else if (modifier && key === 'b') {
         event.preventDefault()
-        setSidebarOpen((current) => !current)
+        toggleSidebar(true)
       } else if (modifier && event.shiftKey && key === 'o' && hasContents) {
         event.preventDefault()
         setTocOpen((current) => !current)
@@ -121,7 +142,7 @@ export function ArtifactWorkspace({
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [paletteSeed, hasContents, tocOpen, openPalette])
+  }, [paletteSeed, hasContents, tocOpen, openPalette, toggleSidebar])
 
   const sites: SiteSummary[] = catalog.length
     ? catalog.map(({ site }) => site).sort((left, right) => left.title.localeCompare(right.title))
@@ -130,7 +151,7 @@ export function ArtifactWorkspace({
     ? [index, ...catalog.filter((other) => other.site.id !== index.site.id)]
     : [index]
   const commands: PaletteCommand[] = [
-    { title: 'Toggle sidebar', shortcut: '⌘ B', onSelect: () => setSidebarOpen((current) => !current) },
+    { title: 'Toggle sidebar', shortcut: '⌘ B', onSelect: () => toggleSidebar() },
     {
       title: 'Toggle contents',
       shortcut: '⌘ ⇧ O',
@@ -163,12 +184,12 @@ export function ArtifactWorkspace({
     navigate(artifactRouteHref(index.site.id, artifact.path))
     setTocOpen(false)
     setPaletteSeed(null)
-    setSidebarOpen(window.innerWidth > 860)
+    updateSidebarOpen(window.innerWidth > 860)
   }
 
   function openFolder(path: string) {
     setExpandedPaths((current) => new Set([...current, path]))
-    setSidebarOpen(true)
+    updateSidebarOpen(true)
   }
 
   function jumpToHeading(id: string) {
@@ -187,6 +208,7 @@ export function ArtifactWorkspace({
     <div className={`app-shell${sidebarOpen ? '' : ' sidebar-collapsed'}`}>
       <Sidebar
         index={index}
+        id="workspace-sidebar"
         sites={sites}
         artifactPath={currentArtifact?.path}
         expandedPaths={expandedPaths}
@@ -195,25 +217,28 @@ export function ArtifactWorkspace({
         onOpenArtifact={openArtifact}
         onToggleTheme={onToggleTheme}
         theme={theme}
-        onClose={() => setSidebarOpen(false)}
+        onCollapse={() => updateSidebarOpen(false, true)}
         treeStyle={sidebarTreeStyle}
       />
-      {sidebarOpen ? <button className="sidebar-backdrop" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} /> : null}
+      {sidebarOpen ? <button className="sidebar-backdrop" aria-label="Close navigation" onClick={() => updateSidebarOpen(false, true)} /> : null}
 
       <div className="workspace">
         <div className="workspace-panel">
           <header className="context-bar">
             <div className="context-leading">
-              <button
-                className={`icon-button${sidebarOpen ? ' is-active' : ''}`}
-                id="sidebar-toggle-trigger"
-                title="Toggle sidebar (⌘ B)"
-                aria-label="Toggle sidebar"
-                aria-pressed={sidebarOpen}
-                onClick={() => setSidebarOpen((current) => !current)}
-              >
-                <Icon name="sidebar" size={16} />
-              </button>
+              {!sidebarOpen ? (
+                <button
+                  className="icon-button"
+                  id="sidebar-toggle-trigger"
+                  title="Open sidebar (⌘ B)"
+                  aria-label="Open sidebar"
+                  aria-controls="workspace-sidebar"
+                  aria-expanded="false"
+                  onClick={() => updateSidebarOpen(true, true)}
+                >
+                  <Icon name="sidebar" size={16} />
+                </button>
+              ) : null}
             </div>
 
             <nav className="breadcrumbs" aria-label="Breadcrumb">

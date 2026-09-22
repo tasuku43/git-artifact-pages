@@ -11,9 +11,10 @@ type WorkspaceStoryArgs = {
   theme: 'light' | 'dark'
   sidebarTreeStyle: typeof treeStyleOptions[number]
   siteHomeTreeStyle: typeof treeStyleOptions[number]
+  initialSidebarOpen: boolean
 }
 
-function WorkspaceStory({ view, theme, sidebarTreeStyle, siteHomeTreeStyle }: WorkspaceStoryArgs) {
+function WorkspaceStory({ view, theme, sidebarTreeStyle, siteHomeTreeStyle, initialSidebarOpen }: WorkspaceStoryArgs) {
   const [route, setRoute] = useState<Extract<AppRoute, { kind: 'site' }>>(() => ({
     kind: 'site',
     siteId: deepSreIndex.site.id,
@@ -63,6 +64,7 @@ function WorkspaceStory({ view, theme, sidebarTreeStyle, siteHomeTreeStyle }: Wo
       sidebarTreeStyle={sidebarTreeStyle}
       siteHomeTreeStyle={siteHomeTreeStyle}
       initialExpandedPaths={deepExpandedPaths}
+      initialSidebarOpen={initialSidebarOpen}
     />
   )
 }
@@ -74,6 +76,7 @@ const meta = {
     theme: 'light',
     sidebarTreeStyle: 'branch-guides',
     siteHomeTreeStyle: 'path-list',
+    initialSidebarOpen: true,
   },
   argTypes: {
     view: {
@@ -95,6 +98,10 @@ const meta = {
       options: treeStyleOptions,
       description: 'Choose the Site Home Browse treatment.',
     },
+    initialSidebarOpen: {
+      control: 'boolean',
+      description: 'Show the workspace with its navigation sidebar open or collapsed.',
+    },
   },
   render: (args: WorkspaceStoryArgs) => <WorkspaceStory {...args} />,
 } satisfies Meta<WorkspaceStoryArgs>
@@ -114,4 +121,9 @@ export const SiteHome: Story = {
 export const DarkArtifactView: Story = {
   name: 'Artifact viewer · dark',
   args: { theme: 'dark' },
+}
+
+export const SidebarCollapsed: Story = {
+  name: 'Artifact viewer · sidebar collapsed',
+  args: { initialSidebarOpen: false },
 }

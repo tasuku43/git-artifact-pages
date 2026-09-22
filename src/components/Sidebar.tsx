@@ -4,6 +4,7 @@ import { ArtifactTree, type TreeStyle } from './ArtifactTree'
 import { Icon } from './Icon'
 
 export function Sidebar({
+  id,
   index,
   sites,
   artifactPath,
@@ -13,9 +14,10 @@ export function Sidebar({
   onOpenArtifact,
   onToggleTheme,
   theme,
-  onClose,
+  onCollapse,
   treeStyle = 'branch-guides',
 }: {
+  id?: string
   index: SiteIndex
   sites: SiteSummary[]
   artifactPath?: string
@@ -25,7 +27,7 @@ export function Sidebar({
   onOpenArtifact: (artifact: ArtifactIndexEntry) => void
   onToggleTheme: () => void
   theme: 'light' | 'dark'
-  onClose: () => void
+  onCollapse: () => void
   treeStyle?: TreeStyle
 }) {
   const [query, setQuery] = useState('')
@@ -46,7 +48,7 @@ export function Sidebar({
   }, [artifactPath, onExpandedPathsChange])
 
   return (
-    <aside className={`sidebar-panel tree-style-${treeStyle}`} aria-label={`${index.site.title} navigation`}>
+    <aside id={id} className={`sidebar-panel tree-style-${treeStyle}`} aria-label={`${index.site.title} navigation`}>
       <div className="sidebar-top">
         <div className="sidebar-top-row">
           <button
@@ -66,8 +68,16 @@ export function Sidebar({
             <span className="site-switcher-hint">{sites.length || 1}</span>
             <Icon name="chevron" size={12} />
           </button>
-          <button className="icon-button sidebar-dismiss" aria-label="Close navigation" onClick={onClose}>
-            <Icon name="close" size={15} />
+          <button
+            className="icon-button sidebar-collapse-trigger"
+            id="sidebar-toggle-trigger"
+            title="Collapse sidebar (⌘ B)"
+            aria-label="Collapse sidebar"
+            aria-controls={id}
+            aria-expanded="true"
+            onClick={onCollapse}
+          >
+            <Icon name="sidebar" size={16} />
           </button>
         </div>
 

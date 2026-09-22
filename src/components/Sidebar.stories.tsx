@@ -53,7 +53,7 @@ function SidebarStory({ theme, treeStyle }: SidebarStoryArgs) {
         onOpenArtifact={(artifact) => setArtifactPath(artifact.path)}
         onToggleTheme={() => setActiveTheme((current) => current === 'light' ? 'dark' : 'light')}
         theme={activeTheme}
-        onClose={() => undefined}
+        onCollapse={() => undefined}
         treeStyle={treeStyle}
       />
       {paletteSeed !== null ? (
