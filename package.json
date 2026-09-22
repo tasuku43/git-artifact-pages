@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "serve:local": "npm run build && docker compose up"
   },
   "dependencies": {
     "react": "^19.3.0",

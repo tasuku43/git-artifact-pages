@@ -48,6 +48,14 @@ npm run preview
 
 The current SPA is intentionally only a Hello World shell. The fixture projection under `fixtures/storage/` is not wired into the application yet.
 
+To serve the production build with the local nginx contract:
+
+~~~sh
+npm run serve:local
+~~~
+
+This serves the SPA on `http://localhost:4173/`, fixture indexes below `/_indexes/`, and fixture artifacts below `/_artifacts/`. Any other route falls back to the SPA shell.
+
 ## Core ideas
 
 - Git-managed artifacts remain versioned with the work that produced them.
