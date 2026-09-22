@@ -26,9 +26,9 @@ There is no application server in the request path. Git is the source of truth; 
 
 ## Status
 
-Early design and local-prototype phase.
+Phase 1 local product prototype. The SPA now discovers sites from per-site indexes and provides a site picker, recent-artifact home, searchable navigation tree, command palette, and an iframe-based artifact viewer. The interface is being shaped in Storybook against committed fixtures.
 
-The Vite + React + TypeScript application shell is now bootstrapped and renders a Hello World page. Artifact discovery and the nginx-backed local serving contract are the next steps. AWS infrastructure and reusable distribution packages come later.
+AWS infrastructure and reusable distribution packages come later.
 
 ## Local development
 
@@ -39,6 +39,14 @@ npm install
 npm run dev
 ~~~
 
+Run the isolated UI design workspace with:
+
+~~~sh
+npm run storybook
+~~~
+
+Storybook uses the same React components and CSS as the application, with the committed site indexes and artifact fixtures. Open the **Product / Workspace** stories for the site home, artifact viewer, and theme variants; the **Navigation** stories cover the site picker, sidebar, and command-palette search modes.
+
 Create a production build with:
 
 ~~~sh
@@ -46,7 +54,12 @@ npm run build
 npm run preview
 ~~~
 
-The current SPA discovers per-site indexes from `/_indexes/`, resolves site and artifact routes, and reports basic loading/error states. The final navigation, search, and artifact viewer UI are not implemented yet.
+Build both the application and the Storybook catalog with:
+
+~~~sh
+npm run build
+npm run build-storybook
+~~~
 
 To serve the production build with the local nginx contract:
 

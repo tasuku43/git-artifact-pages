@@ -92,11 +92,14 @@ export async function loadSiteIndex(
   return parseSiteIndex(payload, url)
 }
 
-export async function discoverSites(fetcher: Fetcher = fetch): Promise<SiteSummary[]> {
+export async function discoverSiteIndexes(fetcher: Fetcher = fetch): Promise<SiteIndex[]> {
   const directoryListing = await fetchText(`${INDEX_ROOT}/`, fetcher)
   const siteIds = extractSiteIds(directoryListing)
-  const indexes = await Promise.all(siteIds.map((siteId) => loadSiteIndex(siteId, fetcher)))
+  return Promise.all(siteIds.map((siteId) => loadSiteIndex(siteId, fetcher)))
+}
 
+export async function discoverSites(fetcher: Fetcher = fetch): Promise<SiteSummary[]> {
+  const indexes = await discoverSiteIndexes(fetcher)
   return indexes
     .map(({ site }) => site)
     .sort((left, right) => left.title.localeCompare(right.title))

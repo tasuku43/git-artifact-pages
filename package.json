@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "serve:local": "npm run build && docker compose up"
@@ -14,10 +16,12 @@
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@storybook/react-vite": "^10.6.0",
     "@types/node": "^26.6.2",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.1.1",
+    "storybook": "^10.6.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.0"
   }
