@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "site": {
+    "id": "sre",
+    "title": "SRE"
+  },
+  "generatedAt": "2026-09-22T00:00:00Z",
+  "artifacts": [
+    {
+      "id": "incidents/checkout-latency",
+      "title": "Checkout latency incident review",
+      "path": "incidents/checkout-latency",
+      "filename": "index.html",
+      "artifactUrl": "/_artifacts/sre/incidents/checkout-latency/index.html",
+      "updatedAt": "2026-09-22T00:00:00Z",
+      "source": {
+        "repository": "example/payments",
+        "ref": "main"
+      },
+      "toc": [
+        {
+          "level": 1,
+          "text": "Summary",
+          "id": "summary"
+        },
+        {
+          "level": 2,
+          "text": "Root cause",
+          "id": "root-cause"
+        },
+        {
+          "level": 2,
+          "text": "Follow-up",
+          "id": "follow-up"
+        }
+      ]
+    },
+    {
+      "id": "architecture/platform-topology",
+      "title": "Platform topology",
+      "path": "architecture/platform-topology",
+      "filename": "index.html",
+      "artifactUrl": "/_artifacts/sre/architecture/platform-topology/index.html",
+      "updatedAt": "2026-09-21T12:00:00Z",
+      "source": {
+        "repository": "example/platform",
+        "ref": "main"
+      },
+      "toc": [
+        {
+          "level": 1,
+          "text": "Topology",
+          "id": "topology"
+        },
+        {
+          "level": 2,
+          "text": "Traffic flow",
+          "id": "traffic-flow"
+        }
+      ]
+    }
+  ]
+}

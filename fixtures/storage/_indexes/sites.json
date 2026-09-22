@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "sites": [
+    {
+      "id": "sre",
+      "title": "SRE"
+    },
+    {
+      "id": "frontend",
+      "title": "Frontend"
+    }
+  ]
+}
