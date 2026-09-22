@@ -1,0 +1,1974 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Git Artifact Pages — UI concept gallery</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --canvas: #0c1118;
+        --canvas-raised: #121a24;
+        --panel: #151f2c;
+        --panel-raised: #1b2736;
+        --line: #29394c;
+        --line-soft: #1f2c3c;
+        --text: #eff4f8;
+        --muted: #9aaabd;
+        --faint: #708299;
+        --cyan: #8ddcff;
+        --cyan-strong: #3fc5f6;
+        --yellow: #f2c875;
+        --green: #94e4ad;
+        --red: #ff9f91;
+        --paper: #fbfcfd;
+        --ink: #223143;
+        --ink-muted: #708196;
+        --paper-line: #dce4eb;
+        --shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        min-width: 320px;
+        margin: 0;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 7% -5%, rgba(63, 197, 246, 0.11), transparent 30rem),
+          var(--canvas);
+      }
+
+      a {
+        color: inherit;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        color: inherit;
+      }
+
+      code,
+      kbd,
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      .page,
+      .review-nav,
+      .review-footer {
+        width: min(1240px, calc(100% - 40px));
+        margin: 0 auto;
+      }
+
+      .page {
+        padding: 68px 0 76px;
+      }
+
+      .eyebrow,
+      .section-kicker,
+      .concept-label,
+      .micro-label {
+        color: var(--cyan);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      p {
+        margin-top: 0;
+      }
+
+      .hero {
+        max-width: 860px;
+        margin-bottom: 34px;
+      }
+
+      .hero .eyebrow {
+        margin-bottom: 16px;
+      }
+
+      .hero h1 {
+        max-width: 800px;
+        margin-bottom: 18px;
+        font-size: clamp(42px, 7vw, 76px);
+        line-height: 0.96;
+        letter-spacing: -0.07em;
+      }
+
+      .hero p {
+        max-width: 770px;
+        margin-bottom: 22px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.6;
+      }
+
+      .principles,
+      .review-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .principles {
+        padding: 0;
+        list-style: none;
+      }
+
+      .principles li,
+      .review-nav a {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(21, 31, 44, 0.75);
+      }
+
+      .principles li {
+        padding: 7px 11px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .review-nav {
+        position: sticky;
+        z-index: 5;
+        top: 14px;
+        margin-bottom: 64px;
+        padding: 8px;
+        border: 1px solid var(--line-soft);
+        border-radius: 14px;
+        background: rgba(12, 17, 24, 0.88);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+        backdrop-filter: blur(14px);
+      }
+
+      .review-nav a {
+        padding: 9px 12px;
+        color: var(--muted);
+        font-size: 12px;
+        text-decoration: none;
+      }
+
+      .review-nav a:hover,
+      .review-nav a:focus-visible {
+        border-color: var(--cyan-strong);
+        color: var(--text);
+        outline: none;
+      }
+
+      .review-nav .nav-note {
+        margin-left: auto;
+        padding: 9px 5px;
+        color: var(--faint);
+        font-size: 11px;
+      }
+
+      .section {
+        scroll-margin-top: 86px;
+        margin-bottom: 88px;
+      }
+
+      .section-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(240px, 0.45fr);
+        gap: 30px;
+        align-items: end;
+        margin-bottom: 22px;
+      }
+
+      .section-kicker {
+        margin-bottom: 10px;
+      }
+
+      .section-header h2 {
+        margin-bottom: 10px;
+        font-size: clamp(29px, 4vw, 46px);
+        line-height: 1;
+        letter-spacing: -0.055em;
+      }
+
+      .section-header p {
+        max-width: 700px;
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .section-note {
+        margin: 0;
+        padding: 13px 15px;
+        border-left: 2px solid var(--yellow);
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+        background: rgba(242, 200, 117, 0.06);
+      }
+
+      .section-note strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--yellow);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .concept-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .concept-card {
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--canvas-raised);
+      }
+
+      .concept-card.featured {
+        border-color: rgba(141, 220, 255, 0.45);
+        box-shadow: 0 0 0 1px rgba(141, 220, 255, 0.06);
+      }
+
+      .concept-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 20px 20px 15px;
+      }
+
+      .concept-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .concept-label::before {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--cyan-strong);
+        content: "";
+      }
+
+      .concept-meta .status {
+        color: var(--faint);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .concept-title {
+        padding: 0 20px;
+      }
+
+      .concept-title h3 {
+        margin-bottom: 7px;
+        font-size: 23px;
+        letter-spacing: -0.04em;
+      }
+
+      .concept-title p {
+        min-height: 42px;
+        margin-bottom: 18px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .mock {
+        min-height: 318px;
+        margin: 0 12px;
+        overflow: hidden;
+        border: 1px solid #2b3a4c;
+        border-radius: 12px;
+        background: #101821;
+        box-shadow: var(--shadow);
+      }
+
+      .mock.light {
+        border-color: #d7e0e8;
+        background: var(--paper);
+      }
+
+      .mock-topbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 40px;
+        padding: 0 13px;
+        border-bottom: 1px solid #273545;
+        color: #b8c7d7;
+        font-size: 10px;
+      }
+
+      .light .mock-topbar {
+        border-color: var(--paper-line);
+        color: var(--ink-muted);
+      }
+
+      .topbar-mark {
+        width: 17px;
+        height: 17px;
+        border: 1px solid currentColor;
+        border-radius: 5px;
+        opacity: 0.8;
+      }
+
+      .topbar-site {
+        font-weight: 700;
+        color: #edf3fa;
+      }
+
+      .light .topbar-site {
+        color: var(--ink);
+      }
+
+      .topbar-spacer {
+        flex: 1;
+      }
+
+      .topbar-action,
+      .select-chip,
+      .search-chip {
+        padding: 5px 7px;
+        border: 1px solid #34465a;
+        border-radius: 6px;
+        color: #a9bbce;
+        background: transparent;
+        font-size: 9px;
+      }
+
+      .light .topbar-action,
+      .light .select-chip,
+      .light .search-chip {
+        border-color: #d3dde5;
+        color: #6d7d8f;
+      }
+
+      .mock-body {
+        min-height: 277px;
+      }
+
+      .site-list-mock {
+        padding: 28px 28px 22px;
+        background: #fbfcfd;
+      }
+
+      .site-list-mock .mock-heading {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 23px;
+      }
+
+      .mock-kicker {
+        margin-bottom: 7px;
+        color: #73859a;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .mock-heading h4 {
+        margin-bottom: 0;
+        color: var(--ink);
+        font-size: 21px;
+        letter-spacing: -0.045em;
+      }
+
+      .mock-heading p {
+        max-width: 230px;
+        margin: 0;
+        color: #7e8da0;
+        font-size: 9px;
+        line-height: 1.5;
+        text-align: right;
+      }
+
+      .artifact-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        padding: 13px 0;
+        border-top: 1px solid #e2e8ed;
+      }
+
+      .artifact-row strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #26384b;
+        font-size: 11px;
+      }
+
+      .artifact-row p {
+        margin: 0;
+        color: #8090a1;
+        font-size: 9px;
+      }
+
+      .artifact-row time {
+        color: #9aa8b7;
+        font-size: 9px;
+        white-space: nowrap;
+      }
+
+      .site-list-mock .more-link {
+        display: inline-block;
+        margin-top: 17px;
+        color: #267ca5;
+        font-size: 9px;
+        font-weight: 700;
+      }
+
+      .table-mock {
+        padding: 20px 20px 18px;
+        background: #101923;
+      }
+
+      .table-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+
+      .table-toolbar strong {
+        margin-right: auto;
+        font-size: 16px;
+        letter-spacing: -0.04em;
+      }
+
+      .filter-chip {
+        padding: 6px 8px;
+        border: 1px solid #304357;
+        border-radius: 5px;
+        color: #96aabc;
+        font-size: 9px;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        color: #c9d5e0;
+        font-size: 9px;
+      }
+
+      .data-table th {
+        padding: 0 8px 9px;
+        color: #71859b;
+        font-size: 8px;
+        font-weight: 600;
+        text-align: left;
+        text-transform: uppercase;
+      }
+
+      .data-table td {
+        padding: 12px 8px;
+        border-top: 1px solid #273646;
+      }
+
+      .data-table td:first-child {
+        color: #eff4f8;
+        font-weight: 650;
+      }
+
+      .data-table .tag {
+        padding: 3px 5px;
+        border-radius: 4px;
+        color: #9ee5b4;
+        background: rgba(148, 228, 173, 0.1);
+        font-size: 8px;
+      }
+
+      .grid-mock {
+        padding: 24px;
+        background: #f4f7f9;
+      }
+
+      .grid-mock .mock-heading {
+        margin-bottom: 17px;
+      }
+
+      .grid-mock .mock-heading h4 {
+        font-size: 18px;
+      }
+
+      .artifact-cards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+      }
+
+      .artifact-card {
+        padding: 13px;
+        border: 1px solid #dbe4ea;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .artifact-card .card-icon {
+        display: grid;
+        width: 22px;
+        height: 22px;
+        margin-bottom: 12px;
+        place-items: center;
+        border-radius: 6px;
+        color: #397694;
+        background: #e7f4fa;
+        font-size: 10px;
+      }
+
+      .artifact-card strong {
+        display: block;
+        margin-bottom: 5px;
+        color: #283b4e;
+        font-size: 10px;
+        line-height: 1.25;
+      }
+
+      .artifact-card p {
+        margin: 0;
+        color: #8493a1;
+        font-size: 8px;
+        line-height: 1.4;
+      }
+
+      .timeline-mock {
+        padding: 24px 25px 19px;
+        background: #f9fafb;
+      }
+
+      .timeline-mock .mock-heading {
+        margin-bottom: 19px;
+      }
+
+      .timeline {
+        position: relative;
+        padding-left: 19px;
+      }
+
+      .timeline::before {
+        position: absolute;
+        top: 5px;
+        bottom: 8px;
+        left: 4px;
+        width: 1px;
+        background: #d6e0e6;
+        content: "";
+      }
+
+      .timeline-event {
+        position: relative;
+        padding: 0 0 16px;
+      }
+
+      .timeline-event:last-child {
+        padding-bottom: 0;
+      }
+
+      .timeline-event::before {
+        position: absolute;
+        top: 4px;
+        left: -19px;
+        width: 9px;
+        height: 9px;
+        border: 2px solid #f9fafb;
+        border-radius: 50%;
+        background: #4b9ab8;
+        box-shadow: 0 0 0 1px #b7d3df;
+        content: "";
+      }
+
+      .timeline-event time {
+        display: block;
+        margin-bottom: 4px;
+        color: #8a9aa9;
+        font-size: 8px;
+      }
+
+      .timeline-event strong {
+        display: block;
+        margin-bottom: 3px;
+        color: #2d4052;
+        font-size: 10px;
+      }
+
+      .timeline-event p {
+        margin: 0;
+        color: #8594a2;
+        font-size: 8px;
+      }
+
+      .reader-mock {
+        display: grid;
+        grid-template-columns: 76px minmax(0, 1fr);
+        background: #e7edf1;
+      }
+
+      .reader-rail {
+        padding: 13px 9px;
+        border-right: 1px solid #d2dce3;
+        background: #f2f5f7;
+      }
+
+      .reader-rail .rail-button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+        padding: 6px 5px;
+        border-radius: 5px;
+        color: #7e8e9e;
+        font-size: 8px;
+      }
+
+      .reader-rail .rail-button.active {
+        color: #2a566d;
+        background: #dceff5;
+      }
+
+      .reader-paper {
+        align-self: center;
+        margin: 14px 14px 14px 10px;
+        padding: 20px 22px;
+        background: #fff;
+        box-shadow: 0 5px 20px rgba(42, 64, 82, 0.11);
+      }
+
+      .reader-paper .paper-kicker {
+        margin-bottom: 9px;
+        color: #5b9bb4;
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .reader-paper h4 {
+        margin-bottom: 11px;
+        color: var(--ink);
+        font-size: 19px;
+        line-height: 1.05;
+        letter-spacing: -0.05em;
+      }
+
+      .reader-paper p {
+        margin-bottom: 10px;
+        color: #718196;
+        font-size: 9px;
+        line-height: 1.55;
+      }
+
+      .reader-paper .paper-line {
+        width: 80%;
+        height: 5px;
+        margin-top: 6px;
+        border-radius: 3px;
+        background: #e4eaf0;
+      }
+
+      .workbench-mock {
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr) 74px;
+        background: #ebf0f3;
+      }
+
+      .tree-mini,
+      .toc-mini {
+        padding: 13px 9px;
+        color: #718497;
+        background: #f1f4f6;
+      }
+
+      .toc-mini {
+        border-left: 1px solid #d8e0e5;
+      }
+
+      .tree-mini {
+        border-right: 1px solid #d8e0e5;
+      }
+
+      .tree-mini .mini-heading,
+      .toc-mini .mini-heading {
+        margin-bottom: 10px;
+        color: #9aa8b5;
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .tree-mini .mini-item,
+      .toc-mini .mini-item {
+        margin-bottom: 8px;
+        font-size: 8px;
+        line-height: 1.2;
+      }
+
+      .tree-mini .mini-item.active,
+      .toc-mini .mini-item.active {
+        color: #2b708c;
+        font-weight: 700;
+      }
+
+      .workbench-paper {
+        align-self: center;
+        min-height: 238px;
+        margin: 13px 9px;
+        padding: 20px 20px;
+        background: #fff;
+        box-shadow: 0 5px 20px rgba(42, 64, 82, 0.11);
+      }
+
+      .workbench-paper .paper-kicker {
+        margin-bottom: 10px;
+        color: #5b9bb4;
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .workbench-paper h4 {
+        margin-bottom: 10px;
+        color: var(--ink);
+        font-size: 19px;
+        line-height: 1.05;
+        letter-spacing: -0.05em;
+      }
+
+      .workbench-paper p {
+        color: #718196;
+        font-size: 9px;
+        line-height: 1.55;
+      }
+
+      .split-mock {
+        display: grid;
+        grid-template-columns: 100px minmax(0, 1fr);
+        background: #101923;
+      }
+
+      .split-nav {
+        padding: 14px 10px;
+        border-right: 1px solid #2b3a49;
+      }
+
+      .split-nav .mini-heading {
+        margin-bottom: 11px;
+        color: #708399;
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .split-nav .mini-item {
+        margin-bottom: 9px;
+        color: #a3b4c4;
+        font-size: 8px;
+        line-height: 1.25;
+      }
+
+      .split-nav .mini-item.active {
+        color: var(--cyan);
+      }
+
+      .split-preview {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-width: 0;
+      }
+
+      .split-preview-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 13px 14px 10px;
+        color: #a7b7c7;
+        font-size: 8px;
+      }
+
+      .split-document {
+        margin: 0 13px 13px;
+        padding: 18px 18px;
+        overflow: hidden;
+        border: 1px solid #d8e1e8;
+        background: #fbfcfd;
+      }
+
+      .split-document h4 {
+        margin-bottom: 10px;
+        color: var(--ink);
+        font-size: 18px;
+        letter-spacing: -0.05em;
+      }
+
+      .split-document p {
+        max-width: 300px;
+        margin-bottom: 11px;
+        color: #77879a;
+        font-size: 9px;
+        line-height: 1.55;
+      }
+
+      .outline-mock {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 103px;
+        background: #e7edf1;
+      }
+
+      .outline-document {
+        align-self: center;
+        margin: 14px 12px 14px 16px;
+        padding: 20px 21px;
+        background: #fff;
+        box-shadow: 0 5px 20px rgba(42, 64, 82, 0.1);
+      }
+
+      .outline-document h4 {
+        margin-bottom: 10px;
+        color: var(--ink);
+        font-size: 20px;
+        letter-spacing: -0.05em;
+      }
+
+      .outline-document p {
+        margin-bottom: 10px;
+        color: #758498;
+        font-size: 9px;
+        line-height: 1.5;
+      }
+
+      .outline-panel {
+        padding: 16px 11px;
+        border-left: 1px solid #d3dde4;
+        background: #f1f4f6;
+      }
+
+      .outline-panel .mini-heading {
+        margin-bottom: 11px;
+        color: #93a2b0;
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .outline-panel .mini-item {
+        margin-bottom: 9px;
+        color: #718294;
+        font-size: 8px;
+        line-height: 1.25;
+      }
+
+      .outline-panel .mini-item.active {
+        color: #2e718a;
+        font-weight: 700;
+      }
+
+      .palette-stage {
+        position: relative;
+        min-height: 277px;
+        padding: 20px;
+        background: #0f1721;
+      }
+
+      .palette-underlay {
+        opacity: 0.44;
+      }
+
+      .underlay-heading {
+        width: 47%;
+        height: 11px;
+        margin-bottom: 11px;
+        border-radius: 4px;
+        background: #506276;
+      }
+
+      .underlay-row {
+        width: 85%;
+        height: 35px;
+        margin-bottom: 8px;
+        border: 1px solid #2d4054;
+        border-radius: 5px;
+        background: #162332;
+      }
+
+      .palette {
+        position: absolute;
+        top: 31px;
+        right: 16%;
+        left: 16%;
+        overflow: hidden;
+        border: 1px solid #466477;
+        border-radius: 9px;
+        background: #182534;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      }
+
+      .palette-input {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 12px;
+        border-bottom: 1px solid #304558;
+        color: #edf5fa;
+        font-size: 10px;
+      }
+
+      .palette-input .magnify {
+        color: var(--cyan);
+      }
+
+      .palette-results {
+        padding: 6px;
+      }
+
+      .palette-group {
+        padding: 6px 7px 5px;
+        color: #7f94a8;
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .palette-result {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 7px;
+        border-radius: 5px;
+        color: #b8c9d8;
+        font-size: 9px;
+      }
+
+      .palette-result.selected {
+        color: #f4fbff;
+        background: #24516a;
+      }
+
+      .palette-result .result-icon {
+        color: var(--cyan);
+      }
+
+      .palette-result .result-path {
+        margin-left: auto;
+        color: #8399ad;
+        font-size: 8px;
+      }
+
+      .global-search-mock {
+        min-height: 277px;
+        padding: 24px;
+        background: #f5f7f8;
+      }
+
+      .global-search-box {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 17px;
+        padding: 10px 12px;
+        border: 1px solid #b8cbd5;
+        border-radius: 7px;
+        color: #355468;
+        background: #fff;
+        box-shadow: 0 3px 10px rgba(49, 78, 93, 0.08);
+        font-size: 10px;
+      }
+
+      .global-search-box .search-symbol {
+        color: #4e9ab7;
+      }
+
+      .global-search-box .search-hint {
+        margin-left: auto;
+        color: #99a8b4;
+        font-size: 8px;
+      }
+
+      .search-section-label {
+        margin: 0 0 8px;
+        color: #8494a1;
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .global-result {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 10px 11px;
+        border-bottom: 1px solid #dce4e8;
+      }
+
+      .global-result .result-type {
+        width: 23px;
+        height: 23px;
+        border-radius: 6px;
+        background: #dceff5;
+      }
+
+      .global-result strong {
+        display: block;
+        margin-bottom: 3px;
+        color: #31475a;
+        font-size: 10px;
+      }
+
+      .global-result p {
+        margin: 0;
+        color: #8797a4;
+        font-size: 8px;
+      }
+
+      .global-result .result-site {
+        margin-left: auto;
+        color: #7890a0;
+        font-size: 8px;
+      }
+
+      .concept-notes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 15px 20px 20px;
+      }
+
+      .concept-note {
+        min-width: 0;
+      }
+
+      .concept-note .micro-label {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--faint);
+        font-size: 9px;
+      }
+
+      .concept-note p {
+        margin-bottom: 0;
+        color: #bac7d3;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .decision-card {
+        padding: 25px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: var(--canvas-raised);
+      }
+
+      .decision-card h3 {
+        margin-bottom: 8px;
+        font-size: 23px;
+        letter-spacing: -0.04em;
+      }
+
+      .decision-card > p {
+        max-width: 760px;
+        margin-bottom: 22px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .matrix-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+
+      .matrix {
+        width: 100%;
+        min-width: 860px;
+        border-collapse: collapse;
+        color: #c5d2de;
+        font-size: 11px;
+      }
+
+      .matrix th,
+      .matrix td {
+        padding: 12px 13px;
+        border-bottom: 1px solid var(--line-soft);
+        border-right: 1px solid var(--line-soft);
+        vertical-align: top;
+        text-align: left;
+      }
+
+      .matrix th:last-child,
+      .matrix td:last-child {
+        border-right: 0;
+      }
+
+      .matrix tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .matrix th {
+        color: var(--faint);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: #111a25;
+      }
+
+      .matrix th:first-child {
+        width: 155px;
+      }
+
+      .matrix td:first-child {
+        color: #eef4f8;
+        font-weight: 700;
+      }
+
+      .matrix .good {
+        color: var(--green);
+      }
+
+      .matrix .neutral {
+        color: var(--yellow);
+      }
+
+      .matrix .weak {
+        color: var(--faint);
+      }
+
+      .review-footer {
+        padding: 23px 0 8px;
+        border-top: 1px solid var(--line-soft);
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .review-footer strong {
+        color: var(--text);
+      }
+
+      @media (max-width: 800px) {
+        .page,
+        .review-nav,
+        .review-footer {
+          width: min(100% - 28px, 620px);
+        }
+
+        .page {
+          padding-top: 46px;
+        }
+
+        .section-header,
+        .concept-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .section-header {
+          gap: 18px;
+        }
+
+        .review-nav .nav-note {
+          width: 100%;
+          margin-left: 0;
+          padding-left: 5px;
+        }
+      }
+
+      @media (max-width: 470px) {
+        .concept-notes {
+          grid-template-columns: 1fr;
+        }
+
+        .mock {
+          margin: 0 8px;
+        }
+
+        .concept-meta,
+        .concept-title,
+        .concept-notes {
+          padding-right: 14px;
+          padding-left: 14px;
+        }
+
+        .site-list-mock,
+        .grid-mock,
+        .timeline-mock,
+        .global-search-mock {
+          padding-right: 16px;
+          padding-left: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">Git Artifact Pages / UI concept review</p>
+        <h1>A wider set of calm, document-first directions.</h1>
+        <p>
+          The same artifact data can feel like a library, a changelog, a workbench,
+          or a focused reader. This gallery makes those choices visible before we
+          commit to a product shell.
+        </p>
+        <ul class="principles" aria-label="Design principles">
+          <li>English product copy</li>
+          <li>No persistent site sidebar</li>
+          <li>Site switcher in the top bar</li>
+          <li>Command K remains available</li>
+          <li>Quiet navigation over ornament</li>
+        </ul>
+      </header>
+
+      <nav class="review-nav" aria-label="Concept gallery sections">
+        <a href="#site-homes">Site home patterns</a>
+        <a href="#artifact-views">Artifact view patterns</a>
+        <a href="#search-patterns">Search patterns</a>
+        <a href="#comparison">Comparison matrix</a>
+        <span class="nav-note">Review the emphasis, not the final visual polish.</span>
+      </nav>
+
+      <section class="section" id="site-homes">
+        <div class="section-header">
+          <div>
+            <p class="section-kicker">01 / Site home</p>
+            <h2>What should the site root feel like?</h2>
+            <p>
+              Every option keeps the site root as an artifact index. The difference is
+              whether it optimizes for scanning, comparison, visual grouping, or recency.
+            </p>
+          </div>
+          <p class="section-note">
+            <strong>Shared constraint</strong>
+            The current site is selected in the top bar. There is no permanent list of
+            sites competing with the content.
+          </p>
+        </div>
+
+        <div class="concept-grid">
+          <article class="concept-card featured" id="quiet-list">
+            <div class="concept-meta">
+              <span class="concept-label">A / Baseline</span>
+              <span class="status">Low decoration</span>
+            </div>
+            <div class="concept-title">
+              <h3>Quiet list</h3>
+              <p>A short, editorial index that makes the latest useful artifact obvious.</p>
+            </div>
+            <div class="mock light" aria-label="Quiet list site home mock">
+              <div class="mock-topbar">
+                <span class="topbar-mark"></span>
+                <span class="topbar-site">SRE</span>
+                <span class="select-chip">Switch site⌄</span>
+                <span class="topbar-spacer"></span>
+                <span class="search-chip">⌘ K</span>
+              </div>
+              <div class="mock-body site-list-mock">
+                <div class="mock-heading">
+                  <div>
+                    <p class="mock-kicker">Site index</p>
+                    <h4>Recent artifacts</h4>
+                  </div>
+                  <p>Operational notes, reviews, and architecture records.</p>
+                </div>
+                <div class="artifact-row">
+                  <div>
+                    <strong>Checkout latency incident review</strong>
+                    <p>Incidents / 8 min read</p>
+                  </div>
+                  <time>Sep 22</time>
+                </div>
+                <div class="artifact-row">
+                  <div>
+                    <strong>Platform topology</strong>
+                    <p>Architecture / 4 min read</p>
+                  </div>
+                  <time>Sep 20</time>
+                </div>
+                <span class="more-link">Browse all artifacts →</span>
+              </div>
+            </div>
+            <div class="concept-notes">
+              <div class="concept-note">
+                <span class="micro-label">Best for</span>
+                <p>Fast orientation and a documentation-like feel.</p>
+              </div>
+              <div class="concept-note">
+                <span class="micro-label">Tradeoff</span>
+                <p>Less useful when users compare many artifacts at once.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept-card" id="dense-table">
+            <div class="concept-meta">
+              <span class="concept-label">B / Catalog</span>
+              <span class="status">High scan density</span>
+            </div>
+            <div class="concept-title">
+              <h3>Dense catalog</h3>
+              <p>A sortable index for teams that treat artifacts as a searchable record set.</p>
+            </div>
+            <div class="mock" aria-label="Dense catalog site home mock">
+              <div class="mock-topbar">
+                <span class="topbar-mark"></span>
+                <span class="topbar-site">SRE</span>
+                <span class="select-chip">Switch site⌄</span>
+                <span class="topbar-spacer"></span>
+                <span class="topbar-action">⌘ K</span>
+              </div>
+              <div class="mock-body table-mock">
+                <div class="table-toolbar">
+                  <strong>All artifacts</strong>
+                  <span class="filter-chip">Type: all</span>
+                  <span class="filter-chip">Sort: date</span>
+                </div>
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Artifact</th>
+                      <th>Area</th>
+                      <th>Updated</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Checkout latency review</td>
+                      <td>Incident</td>
+                      <td>Sep 22</td>
+                      <td><span class="tag">Published</span></td>
+                    </tr>
+                    <tr>
+                      <td>Platform topology</td>
+                      <td>Architecture</td>
+                      <td>Sep 20</td>
+                      <td><span class="tag">Published</span></td>
+                    </tr>
+                    <tr>
+                      <td>On-call handoff</td>
+                      <td>Operations</td>
+                      <td>Sep 18</td>
+                      <td><span class="tag">Published</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="concept-notes">
+              <div class="concept-note">
+                <span class="micro-label">Best for</span>
+                <p>Comparing dates, areas, and publication status.</p>
+              </div>
+              <div class="concept-note">
+                <span class="micro-label">Tradeoff</span>
+                <p>Feels more like an admin catalog than a reading space.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept-card" id="card-index">
+            <div class="concept-meta">
+              <span class="concept-label">C / Library</span>
+              <span class="status">Visual grouping</span>
+            </div>
+            <div class="concept-title">
+              <h3>Artifact cards</h3>
+              <p>A library surface where type, topic, and document shape are easy to group.</p>
+            </div>
+            <div class="mock light" aria-label="Artifact cards site home mock">
+              <div class="mock-topbar">
+                <span class="topbar-mark"></span>
+                <span class="topbar-site">Frontend</span>
+                <span class="select-chip">Switch site⌄</span>
+                <span class="topbar-spacer"></span>
+                <span class="search-chip">⌘ K</span>
+              </div>
+              <div class="mock-body grid-mock">
+                <div class="mock-heading">
+                  <p class="mock-kicker">Frontend library</p>
+                  <h4>Browse by artifact</h4>
+                </div>
+                <div class="artifact-cards">
+                  <div class="artifact-card">
+                    <span class="card-icon">Aa</span>
+                    <strong>Button guidelines</strong>
+                    <p>Design system · 5 min read</p>
+                  </div>
+                  <div class="artifact-card">
+                    <span class="card-icon">◌</span>
+                    <strong>Form patterns</strong>
+                    <p>Interaction · 7 min read</p>
+                  </div>
+                  <div class="artifact-card">
+                    <span class="card-icon">⌁</span>
+                    <strong>Release notes</strong>
+                    <p>Updates · 3 min read</p>
+                  </div>
+                  <div class="artifact-card">
+                    <span class="card-icon">↗</span>
+                    <strong>Accessibility checks</strong>
+                    <p>Quality · 6 min read</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="concept-notes">
+              <div class="concept-note">
+                <span class="micro-label">Best for</span>
+                <p>Small collections with recognizable artifact categories.</p>
+              </div>
+              <div class="concept-note">
+                <span class="micro-label">Tradeoff</span>
+                <p>Cards consume space and can become generic dashboard UI.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept-card" id="timeline-index">
+            <div class="concept-meta">
+              <span class="concept-label">D / Changelog</span>
+              <span class="status">Recency first</span>
+            </div>
+            <div class="concept-title">
+              <h3>Publication timeline</h3>
+              <p>A chronological stream for repositories where the newest record is the main entry point.</p>
+            </div>
+            <div class="mock light" aria-label="Publication timeline site home mock">
+              <div class="mock-topbar">
+                <span class="topbar-mark"></span>
+                <span class="topbar-site">Payments</span>
+                <span class="select-chip">Switch site⌄</span>
+                <span class="topbar-spacer"></span>
+                <span class="search-chip">⌘ K</span>
+              </div>
+              <div class="mock-body timeline-mock">
+                <div class="mock-heading">
+                  <p class="mock-kicker">Payments / publication history</p>
+                  <h4>What changed recently?</h4>
+                </div>
+                <div class="timeline">
+                  <div class="timeline-event">
+                    <time>September 22, 2026</time>
+                    <strong>Checkout latency incident review</strong>
+                    <p>Incident review published by SRE.</p>
+                  </div>
+                  <div class="timeline-event">
+                    <time>September 20, 2026</time>
+                    <strong>Retry policy decision record</strong>
+                    <p>Architecture decision updated.</p>
+                  </div>
+                  <div class="timeline-event">
+                    <time>September 18, 2026</time>
+                    <strong>On-call handoff</strong>
+                    <p>Operations note added to the index.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="concept-notes">
+              <div class="concept-note">
+                <span class="micro-label">Best for</span>
+                <p>Incident reviews, release notes, and active project logs.</p>
+              </div>
+              <div class="concept-note">
+                <span class="micro-label">Tradeoff</span>
+                <p>Older reference material becomes less discoverable.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="artifact-views">
+        <div class="section-header">
+          <div>
+            <p class="section-kicker">02 / Artifact view</p>
+            <h2>How much navigation should surround the document?</h2>
+            <p>
+              These options all keep rendered artifacts in an iframe. The decision is about
+              how much context remains visible while reading a single artifact.
+            </p>
+          </div>
+          <p class="section-note">
+            <strong>Shared constraint</strong>
+            The document remains the visual center. Navigation can recede, stay local, or
+            become a deliberate second pane.
+          </p>
+        </div>
+
+        <div class="concept-grid">
+          <article class="concept-card" id="focus-reader">
+            <div class="concept-meta">
+              <span class="concept-label">E / Reader</span>
+              <span class="status">Document first</span>
+            </div>
+            <div class="concept-title">
+              <h3>Focus reader</h3>
+              <p>A slim context rail keeps the reader oriented without turning the page into an IDE.</p>
+            </div>
+            <div class="mock light" aria-label="Focus reader artifact view mock">
+              <div class="mock-topbar">
+                <span class="topbar-mark"></span>
+                <span class="topbar-site">SRE</span>
+                <span class="select-chip">Incidents / Checkout latency</span>
+                <span class="topbar-spacer"></span>
+                <span class="search-chip">⌘ K</span>
+              </div>
+              <div class="mock-body reader-mock">
+                <aside class="reader-rail">
+                  <div class="rail-button active">← <span>Back</span></div>
+                  <div class="rail-button">≡ <span>Outline</span></div>
+                  <div class="rail-button">↗ <span>Open</span></div>
+                </aside>
+                <div class="reader-paper">
+                  <p class="paper-kicker">Incident review</p>
+                  <h4>Checkout latency incident review</h4>
+                  <p>We traced the elevated checkout latency to a retry amplification loop.</p>
+                  <p>The mitigation reduced the queue depth and restored the p95 target.</p>
+                  <div class="paper-line"></div>
+                  <div class="paper-line"></div>
+                </div>
+              </div>
+            </div>
+            <div class="concept-notes">
+              <div class="concept-note">
+                <span class="micro-label">Best for</span>
+                <p>Long-form reading and sharing a clean document view.</p>
+              </div>
+              <div class="concept-note">
+                <span class="micro-label">Tradeoff</span>
+                <p>Moving between sibling artifacts takes one extra step.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept-card featured" id="quiet-workbench">
+            <div class="concept-meta">
+              <span class="concept-label">F / Workbench</span>
+              <span class="status">Context visible</span>
+            </div>
+            <div class="concept-title">
+              <h3>Quiet workbench</h3>
+              <p>A restrained three-pane layout keeps the current site tree and document outline nearby.</p>
+            </div>
+            <div class="mock light" aria-label="Quiet workbench artifact view mock">
+              <div class="mock-topbar">
+                <span class="topbar-mark"></span>
+                <span class="topbar-site">SRE</span>
+                <span class="select-chip">Switch site⌄</span>
+                <span class="topbar-spacer"></span>
+                <span class="search-chip">⌘ K</span>
+              </div>
+              <div class="mock-body workbench-mock">
+                <aside class="tree-mini">
+                  <p class="mini-heading">SRE</p>
+                  <div class="mini-item">Architecture</div>
+                  <div class="mini-item">Incidents</div>
+                  <div class="mini-item active">Checkout latency</div>
+                  <div class="mini-item">Operations</div>
+                </aside>
+                <div class="workbench-paper">
+                  <p class="paper-kicker">Incident review</p>
+                  <h4>Checkout latency incident review</h4>
+                  <p>We traced the elevated checkout latency to a retry amplification loop.</p>
+                  <p>Mitigation and follow-up actions are documented below.</p>
+                </div>
+                <aside class="toc-mini">
+                  <p class="mini-heading">On this page</p>
+                  <div class="mini-item active">Summary</div>
+                  <div class="mini-item">Timeline</div>
+                  <div class="mini-item">Root cause</div>
+                  <div class="mini-item">Actions</div>
+                </aside>
+              </div>
+            </div>
+            <div class="concept-notes">
+              <div class="concept-note">
+                <span class="micro-label">Best for</span>
+                <p>Frequent cross-reading across a single site.</p>
+              </div>
+              <div class="concept-note">
+                <span class="micro-label">Tradeoff</span>
+                <p>Three panes can feel heavy on small screens.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept-card" id="split-preview">
+            <div class="concept-meta">
+              <span class="concept-label">G / Split preview</span>
+              <span class="status">Browse and inspect</span>
+            </div>
+            <div class="concept-title">
+              <h3>Split preview</h3>
+              <p>The tree behaves like a file browser while the selected artifact previews beside it.</p>
+            </div>
+            <div class="mock" aria-label="Split preview artifact view mock">
+              <div class="mock-topbar">
+                <span class="topbar-mark"></span>
+                <span class="topbar-site">SRE</span>
+                <span class="topbar-action">Incidents</span>
+                <span class="topbar-spacer"></span>
+                <span class="topbar-action">⌘ K</span>
+              </div>
+              <div class="mock-body split-mock">
+                <aside class="split-nav">
+                  <p class="mini-heading">Artifacts</p>
+                  <div class="mini-item">Architecture</div>
+                  <div class="mini-item active">Checkout latency</div>
+                  <div class="mini-item">Platform topology</div>
+                  <div class="mini-item">On-call handoff</div>
+                </aside>
+                <div class="split-preview">
+                  <div class="split-preview-top">
+                    <span>Incidents / Checkout latency</span>
+                    <span>Open ↗</span>
+                  </div>
+                  <div class="split-document">
+                    <h4>Checkout latency incident review</h4>
+                    <p>We traced the elevated checkout latency to a retry amplification loop.</p>
+                    <p>Preview is useful when choosing the next document to open.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="concept-notes">
+              <div class="concept-note">
+                <span class="micro-label">Best for</span>
+                <p>Repository-like browsing and quick document triage.</p>
+              </div>
+              <div class="concept-note">
+                <span class="micro-label">Tradeoff</span>
+                <p>Rendered pages have less room and may need a full-view action.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept-card" id="outline-reader">
+            <div class="concept-meta">
+              <span class="concept-label">H / Outline</span>
+              <span class="status">Structure first</span>
+            </div>
+            <div class="concept-title">
+              <h3>Outline-led reader</h3>
+              <p>Document structure becomes the persistent navigation surface; the site tree stays implicit.</p>
+            </div>
+            <div class="mock light" aria-label="Outline-led reader artifact view mock">
+              <div class="mock-topbar">
+                <span class="topbar-mark"></span>
+                <span class="topbar-site">SRE</span>
+                <span class="select-chip">Checkout latency</span>
+                <span class="topbar-spacer"></span>
+                <span class="search-chip">⌘ K</span>
+              </div>
+              <div class="mock-body outline-mock">
+                <div class="outline-document">
+                  <h4>Checkout latency incident review</h4>
+                  <p>We traced the elevated checkout latency to a retry amplification loop.</p>
+                  <p>The outline remains available while the document is read.</p>
+                </div>
+                <aside class="outline-panel">
+                  <p class="mini-heading">On this page</p>
+                  <div class="mini-item active">Summary</div>
+                  <div class="mini-item">Timeline</div>
+                  <div class="mini-item">Root cause</div>
+                  <div class="mini-item">Actions</div>
+                </aside>
+              </div>
+            </div>
+            <div class="concept-notes">
+              <div class="concept-note">
+                <span class="micro-label">Best for</span>
+                <p>Deep artifacts with stable headings and long sections.</p>
+              </div>
+              <div class="concept-note">
+                <span class="micro-label">Tradeoff</span>
+                <p>Site-level relationships are intentionally less visible.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="search-patterns">
+        <div class="section-header">
+          <div>
+            <p class="section-kicker">03 / Search and switching</p>
+            <h2>What does ⌘ K actually search?</h2>
+            <p>
+              The shortcut can be a local navigation tool or a universal entry point. Both
+              keep site switching out of the left rail; the scope is the important choice.
+            </p>
+          </div>
+          <p class="section-note">
+            <strong>Interaction question</strong>
+            Should search start inside the current site, or should it search every indexed
+            site and make the site boundary part of each result?
+          </p>
+        </div>
+
+        <div class="concept-grid">
+          <article class="concept-card featured" id="local-palette">
+            <div class="concept-meta">
+              <span class="concept-label">I / Local palette</span>
+              <span class="status">Current site scope</span>
+            </div>
+            <div class="concept-title">
+              <h3>Scoped command palette</h3>
+              <p>⌘ K searches the current site first, with an explicit action to switch sites.</p>
+            </div>
+            <div class="mock" aria-label="Scoped command palette mock">
+              <div class="mock-topbar">
+                <span class="topbar-mark"></span>
+                <span class="topbar-site">SRE</span>
+                <span class="select-chip">Current site</span>
+                <span class="topbar-spacer"></span>
+                <span class="topbar-action">⌘ K</span>
+              </div>
+              <div class="mock-body palette-stage">
+                <div class="palette-underlay" aria-hidden="true">
+                  <div class="underlay-heading"></div>
+                  <div class="underlay-row"></div>
+                  <div class="underlay-row"></div>
+                  <div class="underlay-row"></div>
+                </div>
+                <div class="palette">
+                  <div class="palette-input"><span class="magnify">⌕</span><span>latency</span></div>
+                  <div class="palette-results">
+                    <div class="palette-group">SRE artifacts</div>
+                    <div class="palette-result selected">
+                      <span class="result-icon">↳</span>
+                      <span>Checkout latency incident review</span>
+                      <span class="result-path">Incidents</span>
+                    </div>
+                    <div class="palette-result">
+                      <span class="result-icon">↳</span>
+                      <span>Platform topology</span>
+                      <span class="result-path">Architecture</span>
+                    </div>
+                    <div class="palette-group">Actions</div>
+                    <div class="palette-result"><span class="result-icon">⇄</span><span>Switch site</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="concept-notes">
+              <div class="concept-note">
+                <span class="micro-label">Best for</span>
+                <p>Predictable results when site names or paths are familiar.</p>
+              </div>
+              <div class="concept-note">
+                <span class="micro-label">Tradeoff</span>
+                <p>Cross-site discovery requires one deliberate action.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="concept-card" id="global-palette">
+            <div class="concept-meta">
+              <span class="concept-label">J / Global search</span>
+              <span class="status">All sites scope</span>
+            </div>
+            <div class="concept-title">
+              <h3>Universal search</h3>
+              <p>⌘ K searches every site and keeps the result source visible instead of adding another mode.</p>
+            </div>
+            <div class="mock light" aria-label="Universal search mock">
+              <div class="mock-topbar">
+                <span class="topbar-mark"></span>
+                <span class="topbar-site">SRE</span>
+                <span class="select-chip">Switch site⌄</span>
+                <span class="topbar-spacer"></span>
+                <span class="search-chip">⌘ K</span>
+              </div>
+              <div class="mock-body global-search-mock">
+                <div class="global-search-box">
+                  <span class="search-symbol">⌕</span>
+                  <span>latency</span>
+                  <span class="search-hint">Every site</span>
+                </div>
+                <p class="search-section-label">Matching artifacts</p>
+                <div class="global-result">
+                  <span class="result-type"></span>
+                  <div>
+                    <strong>Checkout latency incident review</strong>
+                    <p>Incidents / operational review</p>
+                  </div>
+                  <span class="result-site">SRE</span>
+                </div>
+                <div class="global-result">
+                  <span class="result-type"></span>
+                  <div>
+                    <strong>Latency budget notes</strong>
+                    <p>Performance / engineering notes</p>
+                  </div>
+                  <span class="result-site">Frontend</span>
+                </div>
+              </div>
+            </div>
+            <div class="concept-notes">
+              <div class="concept-note">
+                <span class="micro-label">Best for</span>
+                <p>People who think in topics rather than site boundaries.</p>
+              </div>
+              <div class="concept-note">
+                <span class="micro-label">Tradeoff</span>
+                <p>Similar titles need strong site and path context.</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="comparison">
+        <div class="section-header">
+          <div>
+            <p class="section-kicker">04 / Decision surface</p>
+            <h2>One glance across the tradeoffs.</h2>
+            <p>
+              No single pattern wins every workflow. This matrix is a prompt for choosing a
+              small combination, not a vote for one complete design.
+            </p>
+          </div>
+          <p class="section-note">
+            <strong>Suggested next step</strong>
+            Pick one site-home pattern, one artifact-view pattern, and one search scope to
+            combine into the next interactive prototype.
+          </p>
+        </div>
+
+        <div class="decision-card">
+          <h3>Pattern comparison</h3>
+          <p>
+            “Strong” means the pattern naturally supports the behavior. “Mixed” means it can
+            work but needs additional controls. “Weak” means the behavior is deliberately not
+            the focus.
+          </p>
+          <div class="matrix-wrap">
+            <table class="matrix">
+              <thead>
+                <tr>
+                  <th>Question</th>
+                  <th>A Quiet list</th>
+                  <th>B Catalog</th>
+                  <th>C Cards</th>
+                  <th>D Timeline</th>
+                  <th>E Reader</th>
+                  <th>F Workbench</th>
+                  <th>G Split</th>
+                  <th>H Outline</th>
+                  <th>I Local ⌘ K</th>
+                  <th>J Global ⌘ K</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Fast orientation</td>
+                  <td class="good">Strong</td>
+                  <td class="good">Strong</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="good">Strong</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="good">Strong</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="good">Strong</td>
+                  <td class="neutral">Mixed</td>
+                </tr>
+                <tr>
+                  <td>Compare many records</td>
+                  <td class="weak">Weak</td>
+                  <td class="good">Strong</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="weak">Weak</td>
+                  <td class="good">Strong</td>
+                  <td class="good">Strong</td>
+                  <td class="weak">Weak</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="good">Strong</td>
+                </tr>
+                <tr>
+                  <td>Long-form reading</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="weak">Weak</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="good">Strong</td>
+                  <td class="good">Strong</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="good">Strong</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="neutral">Mixed</td>
+                </tr>
+                <tr>
+                  <td>Cross-site discovery</td>
+                  <td class="weak">Weak</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="weak">Weak</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="weak">Weak</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="good">Strong</td>
+                </tr>
+                <tr>
+                  <td>Small-screen comfort</td>
+                  <td class="good">Strong</td>
+                  <td class="weak">Weak</td>
+                  <td class="neutral">Mixed</td>
+                  <td class="good">Strong</td>
+                  <td class="good">Strong</td>
+                  <td class="weak">Weak</td>
+                  <td class="weak">Weak</td>
+                  <td class="good">Strong</td>
+                  <td class="good">Strong</td>
+                  <td class="good">Strong</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="review-footer">
+      <strong>Review gate:</strong> This is a static concept gallery. The product UI remains
+      unchanged until a direction is selected and explicitly approved for implementation.
+    </footer>
+  </body>
+</html>
