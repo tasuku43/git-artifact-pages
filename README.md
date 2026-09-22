@@ -28,7 +28,25 @@ There is no application server in the request path. Git is the source of truth; 
 
 Early design and local-prototype phase.
 
-The first milestone is a local reference implementation using Vite + React, fixture content, Docker Compose, and nginx. AWS infrastructure and reusable distribution packages come later.
+The Vite + React + TypeScript application shell is now bootstrapped and renders a Hello World page. Artifact discovery and the nginx-backed local serving contract are the next steps. AWS infrastructure and reusable distribution packages come later.
+
+## Local development
+
+Install dependencies and start the Vite development server:
+
+~~~sh
+npm install
+npm run dev
+~~~
+
+Create a production build with:
+
+~~~sh
+npm run build
+npm run preview
+~~~
+
+The current SPA is intentionally only a Hello World shell. The fixture projection under `fixtures/storage/` is not wired into the application yet.
 
 ## Core ideas
 
