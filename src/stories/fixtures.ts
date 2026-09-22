@@ -45,5 +45,3 @@ export const deepExpandedPaths = [
   'runbooks/payments',
   'runbooks/payments/europe',
 ]
-
-export const treeStyleOptions = ['quiet', 'branch-guides', 'path-list'] as const

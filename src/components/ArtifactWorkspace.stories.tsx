@@ -2,19 +2,17 @@ import { useEffect, useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ArtifactWorkspace } from './ArtifactWorkspace'
 import { parseRoute, type AppRoute } from '../routing'
-import { deepExpandedPaths, deepSreIndex, storyIndexes, treeStyleOptions } from '../stories/fixtures'
+import { deepExpandedPaths, deepSreIndex, storyIndexes } from '../stories/fixtures'
 
 const indexes = storyIndexes
 
 type WorkspaceStoryArgs = {
   view: 'site-home' | 'artifact'
   theme: 'light' | 'dark'
-  sidebarTreeStyle: typeof treeStyleOptions[number]
-  siteHomeTreeStyle: typeof treeStyleOptions[number]
   initialSidebarOpen: boolean
 }
 
-function WorkspaceStory({ view, theme, sidebarTreeStyle, siteHomeTreeStyle, initialSidebarOpen }: WorkspaceStoryArgs) {
+function WorkspaceStory({ view, theme, initialSidebarOpen }: WorkspaceStoryArgs) {
   const [route, setRoute] = useState<Extract<AppRoute, { kind: 'site' }>>(() => ({
     kind: 'site',
     siteId: deepSreIndex.site.id,
@@ -61,8 +59,6 @@ function WorkspaceStory({ view, theme, sidebarTreeStyle, siteHomeTreeStyle, init
       theme={activeTheme}
       onToggleTheme={() => setActiveTheme((current) => current === 'light' ? 'dark' : 'light')}
       index={index}
-      sidebarTreeStyle={sidebarTreeStyle}
-      siteHomeTreeStyle={siteHomeTreeStyle}
       initialExpandedPaths={deepExpandedPaths}
       initialSidebarOpen={initialSidebarOpen}
     />
@@ -74,8 +70,6 @@ const meta = {
   args: {
     view: 'artifact',
     theme: 'light',
-    sidebarTreeStyle: 'branch-guides',
-    siteHomeTreeStyle: 'path-list',
     initialSidebarOpen: true,
   },
   argTypes: {
@@ -87,16 +81,6 @@ const meta = {
     theme: {
       control: 'radio',
       options: ['light', 'dark'],
-    },
-    sidebarTreeStyle: {
-      control: 'radio',
-      options: treeStyleOptions,
-      description: 'Choose the sidebar tree treatment.',
-    },
-    siteHomeTreeStyle: {
-      control: 'radio',
-      options: treeStyleOptions,
-      description: 'Choose the Site Home Browse treatment.',
     },
     initialSidebarOpen: {
       control: 'boolean',

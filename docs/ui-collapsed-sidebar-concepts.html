@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Collapsed navigation concepts · Git Artifact Pages</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #20252b;
+        background: #f4f5f6;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        --muted: #6f7780;
+        --line: #e2e5e8;
+        --accent: #2866d7;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; min-width: 360px; }
+      button { font: inherit; }
+      .page { max-width: 1180px; margin: 0 auto; padding: 32px 28px 48px; }
+      .eyebrow { margin: 0 0 9px; color: var(--muted); font-size: 11px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; }
+      h1 { margin: 0; font-size: clamp(24px, 3vw, 34px); font-weight: 620; letter-spacing: -.035em; }
+      .intro { max-width: 740px; margin: 10px 0 24px; color: #59616a; font-size: 14px; line-height: 1.6; }
+      .concept-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+      .concept-tab { display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 0 12px; border: 1px solid #d9dde1; border-radius: 7px; background: transparent; color: #4c545c; cursor: pointer; font-size: 13px; }
+      .concept-tab:hover { background: #fff; }
+      .concept-tab[aria-selected="true"] { border-color: #20252b; background: #20252b; color: #fff; }
+      .concept-number { color: inherit; opacity: .65; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+      .recommended { border-radius: 3px; background: #dce8fb; color: #244e96; padding: 3px 5px; font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+      .concept-tab[aria-selected="true"] .recommended { background: #354b6c; color: #e4edff; }
+      .preview-frame { overflow: hidden; border: 1px solid #dfe3e6; border-radius: 10px; background: #fff; box-shadow: 0 10px 32px #20252b0c; }
+      .preview-topline { display: flex; align-items: center; justify-content: space-between; height: 34px; padding: 0 12px; border-bottom: 1px solid #eceef0; background: #fafbfb; color: #77808a; font-size: 10px; }
+      .preview-lights { display: flex; gap: 5px; }
+      .preview-lights i { width: 7px; height: 7px; border-radius: 50%; background: #cbd0d5; }
+      .workspace { display: grid; grid-template-columns: var(--rail-width, 52px) minmax(0, 1fr); height: min(620px, 67vh); min-height: 440px; background: #fff; transition: grid-template-columns 180ms ease; }
+      .workspace[data-concept="canvas"] { --rail-width: 42px; }
+      .workspace[data-concept="reader"] { --rail-width: 52px; }
+      .workspace[data-concept="launchpad"] { --rail-width: 58px; }
+      .rail { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 9px 5px; border-right: 1px solid #e6e8ea; background: #f9fafb; }
+      .rail-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+      .rail-spacer { flex: 1; }
+      .rail-button { position: relative; display: grid; width: 34px; height: 34px; place-items: center; padding: 0; border: 0; border-radius: 7px; background: transparent; color: #606a74; cursor: pointer; }
+      .rail-button:hover, .rail-button:focus-visible { outline: none; background: #e9ecef; color: #222930; }
+      .rail-button.primary { background: #eceff2; color: #232a31; }
+      .rail-button.site-mark { width: 28px; height: 28px; margin: 1px 0 2px; border: 1px solid #d7dce0; border-radius: 7px; background: #fff; color: #253039; font-size: 12px; font-weight: 650; }
+      .rail-divider { width: 24px; height: 1px; margin: 1px 0; background: #e2e5e8; }
+      .rail-tooltip { position: absolute; z-index: 2; left: calc(100% + 8px); top: 50%; display: none; padding: 6px 8px; transform: translateY(-50%); border-radius: 5px; background: #20252b; color: #fff; white-space: nowrap; font-size: 11px; box-shadow: 0 3px 12px #0002; }
+      .rail-button:hover .rail-tooltip, .rail-button:focus-visible .rail-tooltip { display: block; }
+      .rail svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+      .workspace-header { display: flex; align-items: center; justify-content: space-between; height: 48px; padding: 0 18px; border-bottom: 1px solid #eceef0; color: #66717c; font-size: 12px; }
+      .breadcrumbs { display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; }
+      .breadcrumbs .slash { color: #b2b8be; }
+      .breadcrumbs .current { overflow: hidden; color: #252b31; text-overflow: ellipsis; }
+      .header-actions { display: flex; align-items: center; gap: 16px; padding-left: 12px; white-space: nowrap; }
+      .header-action { display: flex; align-items: center; gap: 6px; color: #68727d; }
+      .header-action svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+      .artifact-canvas { height: calc(100% - 48px); overflow: auto; background: #fff; }
+      .artifact { max-width: 780px; margin: 0 auto; padding: clamp(42px, 7vw, 82px) clamp(28px, 6vw, 66px); color: #1e242a; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      .artifact-kicker { margin: 0 0 13px; color: #77818a; font-size: 12px; letter-spacing: .02em; }
+      .artifact h2 { margin: 0 0 24px; font-size: clamp(30px, 4vw, 42px); font-weight: 610; letter-spacing: -.04em; line-height: 1.12; }
+      .artifact h3 { margin: 30px 0 8px; font-size: 21px; font-weight: 590; letter-spacing: -.025em; }
+      .artifact p { margin: 0; color: #434c55; font-size: 15px; line-height: 1.72; }
+      .artifact .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 34px; }
+      .meta span { padding: 4px 8px; border: 1px solid #e4e7e9; border-radius: 4px; color: #67717b; font-size: 11px; }
+      .artifact-callout { margin-top: 24px; padding: 13px 15px; border-left: 2px solid #b9c9df; background: #f8fafc; color: #5d6873; font-size: 12px; line-height: 1.6; }
+      .option-summary { display: grid; grid-template-columns: minmax(140px, .7fr) 1fr 1fr; gap: 16px; padding: 16px 18px; border-top: 1px solid #eceef0; background: #fcfcfd; }
+      .option-summary h2 { margin: 0 0 5px; font-size: 13px; font-weight: 650; }
+      .option-summary p { margin: 0; color: #66717a; font-size: 12px; line-height: 1.5; }
+      .summary-label { display: block; margin-bottom: 4px; color: #8a929a; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+      .choice-rationale { margin: 14px 0 0; color: #65707a; font-size: 12px; line-height: 1.6; }
+      .choice-rationale strong { color: #39434d; font-weight: 650; }
+      .palette-overlay { position: fixed; inset: 0; z-index: 10; display: grid; place-items: start center; padding: 17vh 20px 20px; background: #11182045; }
+      .palette { width: min(520px, 100%); overflow: hidden; border: 1px solid #d9dde1; border-radius: 10px; background: #fff; box-shadow: 0 18px 70px #09111d30; }
+      .palette input { width: 100%; padding: 17px 18px; border: 0; border-bottom: 1px solid #eceef0; outline: 0; color: #29313a; font: inherit; font-size: 14px; }
+      .palette-hint { padding: 12px 18px 6px; color: #838c95; font-size: 10px; }
+      .palette-result { display: flex; justify-content: space-between; padding: 11px 18px; color: #434c55; font-size: 12px; }
+      .palette-result span:last-child { color: #8b949d; }
+      [hidden] { display: none !important; }
+
+      @media (max-width: 680px) {
+        .page { padding: 24px 14px 32px; }
+        .workspace { min-height: 430px; }
+        .workspace-header { padding-inline: 11px; }
+        .breadcrumbs { gap: 5px; font-size: 10px; }
+        .header-actions { gap: 9px; font-size: 0; }
+        .header-action svg { width: 16px; height: 16px; }
+        .option-summary { grid-template-columns: 1fr 1fr; }
+        .option-summary > :first-child { grid-column: 1 / -1; }
+      }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <p class="eyebrow">Navigation exploration · 01</p>
+      <h1>What belongs in the collapsed rail?</h1>
+      <p class="intro">The artifact should keep the canvas. The rail only needs to preserve a few useful ways back into the product. Compare how much navigation to keep visible when the tree is collapsed.</p>
+
+      <div class="concept-tabs" role="tablist" aria-label="Collapsed rail concepts">
+        <button class="concept-tab" id="tab-canvas" role="tab" aria-selected="false" aria-controls="preview" data-concept="canvas"><span class="concept-number">01</span> Canvas handle</button>
+        <button class="concept-tab" id="tab-reader" role="tab" aria-selected="true" aria-controls="preview" data-concept="reader"><span class="concept-number">02</span> Reader rail <span class="recommended">Recommended</span></button>
+        <button class="concept-tab" id="tab-launchpad" role="tab" aria-selected="false" aria-controls="preview" data-concept="launchpad"><span class="concept-number">03</span> Navigation launchpad</button>
+      </div>
+
+      <section class="preview-frame" id="preview" role="tabpanel" aria-labelledby="tab-reader">
+        <div class="preview-topline"><span class="preview-lights" aria-hidden="true"><i></i><i></i><i></i></span><span>Artifact workspace · sidebar collapsed</span></div>
+        <div class="workspace" data-concept="reader">
+          <aside class="rail" aria-label="Collapsed navigation">
+            <div class="rail-group">
+              <button class="rail-button primary" type="button" aria-label="Expand navigation" title="Expand navigation">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2"></rect><path d="M9 4v16"></path></svg>
+                <span class="rail-tooltip">Expand navigation · ⌘ B</span>
+              </button>
+              <button class="rail-button site-mark" type="button" aria-label="Switch site: SRE" title="Switch site" data-open-site>
+                S<span class="rail-tooltip">Switch site</span>
+              </button>
+              <button class="rail-button search-control" type="button" aria-label="Search artifacts and pages" title="Search · ⌘ K" data-open-palette>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"></circle><path d="m15.5 15.5 4.2 4.2"></path></svg>
+                <span class="rail-tooltip">Search · ⌘ K</span>
+              </button>
+              <div class="rail-divider optional-navigation" hidden></div>
+              <button class="rail-button home-control optional-navigation" type="button" aria-label="Go to site home" title="Site home" hidden>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3.5 10 8.5-7 8.5 7v9.5a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z"></path><path d="M9 20.5v-7h6v7"></path></svg>
+                <span class="rail-tooltip">Site home</span>
+              </button>
+              <button class="rail-button browse-control optional-navigation" type="button" aria-label="Open Browse navigation" title="Browse" hidden>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h6v5H4zM14 14h6v5h-6z"></path><path d="M7 10v4h10v-4M17 14v-2"></path><path d="M7 14v-2"></path></svg>
+                <span class="rail-tooltip">Browse</span>
+              </button>
+            </div>
+            <div class="rail-spacer"></div>
+            <div class="rail-group bottom-group">
+              <button class="rail-button theme-control" type="button" aria-label="Switch theme" title="Switch theme">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.2 15.1A8 8 0 0 1 8.9 4.8a8.4 8.4 0 1 0 10.3 10.3Z"></path></svg>
+                <span class="rail-tooltip">Switch theme</span>
+              </button>
+            </div>
+          </aside>
+          <div class="workspace-main">
+            <header class="workspace-header">
+              <nav class="breadcrumbs" aria-label="Artifact path"><span>sre</span><span class="slash">/</span><span>incidents</span><span class="slash">/</span><span>checkout</span><span class="slash">/</span><span class="current">latency-review</span></nav>
+              <div class="header-actions" aria-label="Artifact actions">
+                <span class="header-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10"></path></svg>Contents</span>
+                <span class="header-action"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="1.5"></rect><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"></path></svg>Copy</span>
+                <span class="header-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 5h6v6M19 5l-9 9"></path><path d="M18 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"></path></svg>Open</span>
+              </div>
+            </header>
+            <div class="artifact-canvas">
+              <article class="artifact">
+                <p class="artifact-kicker">INCIDENT REVIEW <span aria-hidden="true">·</span> SEP 22, 2026</p>
+                <h2>Checkout latency incident review</h2>
+                <div class="meta"><span>Payments</span><span>Resolved</span><span>7 min read</span></div>
+                <h3>Summary</h3>
+                <p>A connection-pool regression increased checkout latency for a subset of requests. The rollback restored normal response times while the team prepared a safer capacity limit.</p>
+                <h3>Root cause</h3>
+                <p>The deployment raised concurrency without accounting for the database pool shared across checkout workers. Queueing grew gradually before the alert threshold was reached.</p>
+                <div class="artifact-callout">This content is deliberately document-like: published HTML can bring its own typography, layout, and assets.</div>
+              </article>
+            </div>
+          </div>
+        </div>
+        <div class="option-summary" aria-live="polite">
+          <div><h2 id="option-name">Reader rail</h2><p id="option-width">52 px · 3 primary actions</p></div>
+          <div><span class="summary-label">Keeps visible</span><p id="option-keeps">Expand navigation, current site, command palette, and theme.</p></div>
+          <div><span class="summary-label">Trade-off</span><p id="option-tradeoff">No dedicated Home or Browse shortcut; the artifact breadcrumb and palette already cover those paths.</p></div>
+        </div>
+      </section>
+      <p class="choice-rationale"><strong>Why recommend the reader rail?</strong> Search and site switching remain discoverable, while the artifact—not a second navigation hierarchy—gets the visual space.</p>
+    </main>
+
+    <div class="palette-overlay" hidden role="dialog" aria-modal="true" aria-label="Search artifacts and pages">
+      <div class="palette"><input aria-label="Search artifacts and pages" placeholder="Search artifacts, sites, and pages…" /><div class="palette-hint">RECENT IN SRE</div><div class="palette-result"><span>Checkout latency incident review</span><span>incidents/checkout-latency</span></div><div class="palette-result"><span>Platform topology</span><span>architecture/platform-topology</span></div></div>
+    </div>
+    <script>
+      const tabs = [...document.querySelectorAll('.concept-tab')]
+      const workspace = document.querySelector('.workspace')
+      const panel = document.querySelector('#preview')
+      const name = document.querySelector('#option-name')
+      const width = document.querySelector('#option-width')
+      const keeps = document.querySelector('#option-keeps')
+      const tradeoff = document.querySelector('#option-tradeoff')
+      const optional = document.querySelectorAll('.optional-navigation')
+      const palette = document.querySelector('.palette-overlay')
+      const details = {
+        canvas: {
+          name: 'Canvas handle', width: '42 px · 1 visible action',
+          keeps: 'A quiet control to reopen the tree. Search remains available by ⌘ K.',
+          tradeoff: 'The palette and site switcher have no always-visible entry point. Maximum canvas, lowest discoverability.',
+        },
+        reader: {
+          name: 'Reader rail', width: '52 px · 3 primary actions',
+          keeps: 'Expand navigation, current site, command palette, and theme.',
+          tradeoff: 'No dedicated Home or Browse shortcut; the artifact breadcrumb and palette already cover those paths.',
+        },
+        launchpad: {
+          name: 'Navigation launchpad', width: '58 px · 5 actions',
+          keeps: 'Everything in the reader rail, plus direct Site home and Browse shortcuts.',
+          tradeoff: 'Home duplicates the site breadcrumb; Browse must reopen the tree and focus its section.',
+        },
+      }
+
+      function selectConcept(concept) {
+        const selected = details[concept]
+        workspace.dataset.concept = concept
+        tabs.forEach((tab) => {
+          const active = tab.dataset.concept === concept
+          tab.setAttribute('aria-selected', String(active))
+          tab.tabIndex = active ? 0 : -1
+        })
+        panel.setAttribute('aria-labelledby', `tab-${concept}`)
+        optional.forEach((element) => { element.hidden = concept !== 'launchpad' })
+        name.textContent = selected.name
+        width.textContent = selected.width
+        keeps.textContent = selected.keeps
+        tradeoff.textContent = selected.tradeoff
+      }
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => selectConcept(tab.dataset.concept))
+        tab.addEventListener('keydown', (event) => {
+          if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
+          event.preventDefault()
+          const next = tabs[(index + (event.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]
+          next.focus()
+          selectConcept(next.dataset.concept)
+        })
+      })
+      function openPalette(seed = '') {
+        palette.hidden = false
+        const input = palette.querySelector('input')
+        input.value = seed
+        input.placeholder = seed ? 'Switch site…' : 'Search artifacts, sites, and pages…'
+        palette.querySelector('.palette-hint').textContent = seed ? 'SITES' : 'RECENT IN SRE'
+        const resultRows = palette.querySelectorAll('.palette-result')
+        if (seed) {
+          resultRows[0].innerHTML = '<span>SRE</span><span>Current site</span>'
+          resultRows[1].innerHTML = '<span>Frontend</span><span>Switch site</span>'
+        } else {
+          resultRows[0].innerHTML = '<span>Checkout latency incident review</span><span>incidents/checkout-latency</span>'
+          resultRows[1].innerHTML = '<span>Platform topology</span><span>architecture/platform-topology</span>'
+        }
+        input.focus()
+      }
+      document.querySelector('[data-open-palette]').addEventListener('click', () => openPalette())
+      document.querySelector('[data-open-site]').addEventListener('click', () => openPalette('@'))
+      palette.addEventListener('click', (event) => {
+        if (event.target === palette) palette.hidden = true
+      })
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') palette.hidden = true
+        if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
+          event.preventDefault()
+          if (palette.hidden) openPalette()
+          else palette.hidden = true
+        }
+      })
+    </script>
+  </body>
+</html>
