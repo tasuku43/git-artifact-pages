@@ -184,7 +184,7 @@ export function ArtifactWorkspace({
     navigate(artifactRouteHref(index.site.id, artifact.path))
     setTocOpen(false)
     setPaletteSeed(null)
-    updateSidebarOpen(window.innerWidth > 860)
+    if (window.innerWidth <= 860) updateSidebarOpen(false)
   }
 
   function openFolder(path: string) {
@@ -221,34 +221,68 @@ export function ArtifactWorkspace({
         treeStyle={sidebarTreeStyle}
       />
       {sidebarOpen ? <button className="sidebar-backdrop" aria-label="Close navigation" onClick={() => updateSidebarOpen(false, true)} /> : null}
+      {!sidebarOpen ? (
+        <aside className="collapsed-rail" aria-label={`${index.site.title} navigation`}>
+          <div className="collapsed-rail-group">
+            <button
+              className="collapsed-rail-button collapsed-rail-button-primary"
+              id="sidebar-toggle-trigger"
+              title="Expand navigation (⌘ B)"
+              aria-label="Expand navigation"
+              aria-controls="workspace-sidebar"
+              aria-expanded="false"
+              onClick={() => updateSidebarOpen(true, true)}
+            >
+              <Icon name="sidebar" size={17} />
+            </button>
+            <button
+              className="collapsed-rail-button collapsed-rail-site-button"
+              title={`Switch site: ${index.site.title}`}
+              aria-label={`Switch site. Current site: ${index.site.title}`}
+              onClick={(event) => {
+                event.currentTarget.focus()
+                openPalette('@')
+              }}
+            >
+              <span className="site-mark">{index.site.title.slice(0, 1).toUpperCase()}</span>
+            </button>
+            <button
+              className="collapsed-rail-button"
+              title="Search artifacts and pages (⌘ K)"
+              aria-label="Search artifacts and pages"
+              aria-keyshortcuts="Meta+K Control+K"
+              onClick={(event) => {
+                event.currentTarget.focus()
+                openPalette('')
+              }}
+            >
+              <Icon name="search" size={17} />
+            </button>
+          </div>
+          <div className="collapsed-rail-spacer" />
+          <div className="collapsed-rail-group">
+            <button
+              className="collapsed-rail-button"
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+              onClick={onToggleTheme}
+            >
+              <Icon name={theme === 'light' ? 'moon' : 'sun'} size={16} />
+            </button>
+          </div>
+        </aside>
+      ) : null}
 
       <div className="workspace">
         <div className="workspace-panel">
           <header className="context-bar">
-            <div className="context-leading">
-              {!sidebarOpen ? (
-                <button
-                  className="icon-button"
-                  id="sidebar-toggle-trigger"
-                  title="Open sidebar (⌘ B)"
-                  aria-label="Open sidebar"
-                  aria-controls="workspace-sidebar"
-                  aria-expanded="false"
-                  onClick={() => updateSidebarOpen(true, true)}
-                >
-                  <Icon name="sidebar" size={16} />
-                </button>
-              ) : null}
-            </div>
-
-            <nav className="breadcrumbs" aria-label="Breadcrumb">
-              <button onClick={() => navigate(`/${encodeURIComponent(index.site.id)}`)}>{index.site.id}</button>
+            <nav className="breadcrumbs" aria-label="Artifact path">
               {artifactSegments.map((segment, segmentIndex) => {
                 const isCurrent = segmentIndex === artifactSegments.length - 1
                 const folderPath = artifactSegments.slice(0, segmentIndex + 1).join('/')
                 return (
                   <span className="breadcrumb-part" key={`${folderPath}:${segmentIndex}`}>
-                    <span className="breadcrumb-separator" aria-hidden="true">/</span>
+                    {segmentIndex > 0 ? <span className="breadcrumb-separator" aria-hidden="true">/</span> : null}
                     {isCurrent ? (
                       <span className="breadcrumb-current" aria-current="page">{segment}</span>
                     ) : (

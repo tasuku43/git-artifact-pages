@@ -70,7 +70,7 @@ export function Sidebar({
           </button>
           <button
             className="icon-button sidebar-collapse-trigger"
-            id="sidebar-toggle-trigger"
+            id="sidebar-collapse-trigger"
             title="Collapse sidebar (⌘ B)"
             aria-label="Collapse sidebar"
             aria-controls={id}

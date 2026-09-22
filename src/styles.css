@@ -141,7 +141,7 @@ kbd {
 }
 
 .app-shell.sidebar-collapsed {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 52px minmax(0, 1fr);
 }
 
 .sidebar-panel {
@@ -157,6 +157,60 @@ kbd {
 
 .sidebar-collapsed .sidebar-panel {
   display: none;
+}
+
+.collapsed-rail {
+  display: flex;
+  min-width: 0;
+  grid-column: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 0 max(8px, env(safe-area-inset-bottom, 0px));
+  color: var(--text-secondary);
+  background: var(--shell);
+}
+
+.collapsed-rail-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.collapsed-rail-spacer {
+  flex: 1;
+}
+
+.collapsed-rail-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--text-tertiary);
+}
+
+.collapsed-rail-button:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+
+.collapsed-rail-button-primary {
+  color: var(--text-secondary);
+  background: var(--active);
+}
+
+.collapsed-rail-button-primary:hover {
+  color: var(--text);
+  background: var(--active);
+}
+
+.collapsed-rail-site-button .site-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
 }
 
 .sidebar-top {
@@ -567,7 +621,7 @@ mark {
 }
 
 .sidebar-collapsed .workspace {
-  grid-column: 1;
+  grid-column: 2;
 }
 
 .workspace-panel {
@@ -593,7 +647,6 @@ mark {
   border-bottom: 1px solid var(--line-soft);
 }
 
-.context-leading,
 .context-actions {
   display: flex;
   flex: none;
@@ -1338,9 +1391,12 @@ mark {
 }
 
 @media (max-width: 860px) {
-  .app-shell,
-  .app-shell.sidebar-collapsed {
+  .app-shell {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-shell.sidebar-collapsed {
+    grid-template-columns: 48px minmax(0, 1fr);
   }
 
   .sidebar-panel {
@@ -1375,6 +1431,10 @@ mark {
     padding: 0;
   }
 
+  .sidebar-collapsed .workspace {
+    grid-column: 2;
+  }
+
   .site-home-heading,
   .artifact-list-section,
   .browse-section {
@@ -1396,7 +1456,6 @@ mark {
     padding-left: 4px;
   }
 
-  .context-leading,
   .context-actions {
     gap: 0;
   }
