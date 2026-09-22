@@ -54,7 +54,10 @@ export function Sidebar({
             id="site-switcher"
             title="Switch site"
             aria-label={`Switch site. Current site: ${index.site.title}`}
-            onClick={() => onOpenPalette('@')}
+            onClick={(event) => {
+              event.currentTarget.focus()
+              onOpenPalette('@')
+            }}
           >
             <span className="site-mark site-mark-small" aria-hidden="true">
               {index.site.title.slice(0, 1).toUpperCase()}
@@ -68,7 +71,7 @@ export function Sidebar({
           </button>
         </div>
 
-        <label className="sidebar-filter">
+        <div className="sidebar-filter">
           <Icon name="search" size={14} />
           <input
             aria-label="Filter this site"
@@ -95,7 +98,20 @@ export function Sidebar({
               <Icon name="close" size={12} />
             </button>
           ) : null}
-        </label>
+          <button
+            type="button"
+            className="sidebar-palette-trigger"
+            aria-label="Open command palette (⌘ K)"
+            aria-keyshortcuts="Meta+K Control+K"
+            title="Open command palette (⌘ K)"
+            onClick={(event) => {
+              event.currentTarget.focus()
+              onOpenPalette('')
+            }}
+          >
+            <kbd>⌘ K</kbd>
+          </button>
+        </div>
       </div>
 
       <nav className="sidebar-body" aria-label="Artifacts">

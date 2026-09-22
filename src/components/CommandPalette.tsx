@@ -111,7 +111,7 @@ export function CommandPalette({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search artifacts"
+            placeholder="Search for anything..."
             aria-label="Search artifacts, sites, commands, and headings"
             autoComplete="off"
             spellCheck={false}

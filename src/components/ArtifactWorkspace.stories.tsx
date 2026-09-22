@@ -9,10 +9,11 @@ const indexes = storyIndexes
 type WorkspaceStoryArgs = {
   view: 'site-home' | 'artifact'
   theme: 'light' | 'dark'
-  treeStyle: typeof treeStyleOptions[number]
+  sidebarTreeStyle: typeof treeStyleOptions[number]
+  siteHomeTreeStyle: typeof treeStyleOptions[number]
 }
 
-function WorkspaceStory({ view, theme, treeStyle }: WorkspaceStoryArgs) {
+function WorkspaceStory({ view, theme, sidebarTreeStyle, siteHomeTreeStyle }: WorkspaceStoryArgs) {
   const [route, setRoute] = useState<Extract<AppRoute, { kind: 'site' }>>(() => ({
     kind: 'site',
     siteId: deepSreIndex.site.id,
@@ -59,7 +60,8 @@ function WorkspaceStory({ view, theme, treeStyle }: WorkspaceStoryArgs) {
       theme={activeTheme}
       onToggleTheme={() => setActiveTheme((current) => current === 'light' ? 'dark' : 'light')}
       index={index}
-      treeStyle={treeStyle}
+      sidebarTreeStyle={sidebarTreeStyle}
+      siteHomeTreeStyle={siteHomeTreeStyle}
       initialExpandedPaths={deepExpandedPaths}
     />
   )
@@ -70,7 +72,8 @@ const meta = {
   args: {
     view: 'artifact',
     theme: 'light',
-    treeStyle: 'branch-guides',
+    sidebarTreeStyle: 'branch-guides',
+    siteHomeTreeStyle: 'path-list',
   },
   argTypes: {
     view: {
@@ -82,10 +85,15 @@ const meta = {
       control: 'radio',
       options: ['light', 'dark'],
     },
-    treeStyle: {
+    sidebarTreeStyle: {
       control: 'radio',
       options: treeStyleOptions,
-      description: 'Compare hierarchy and selection treatments across the sidebar and site-home browse tree.',
+      description: 'Choose the sidebar tree treatment.',
+    },
+    siteHomeTreeStyle: {
+      control: 'radio',
+      options: treeStyleOptions,
+      description: 'Choose the Site Home Browse treatment.',
     },
   },
   render: (args: WorkspaceStoryArgs) => <WorkspaceStory {...args} />,

@@ -7,7 +7,7 @@ import { Icon } from './Icon'
 export function SiteHome({
   index,
   onOpenArtifact,
-  treeStyle = 'branch-guides',
+  treeStyle = 'path-list',
   defaultExpandedPaths,
 }: {
   index: SiteIndex

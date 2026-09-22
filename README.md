@@ -45,7 +45,7 @@ Run the isolated UI design workspace with:
 npm run storybook
 ~~~
 
-Storybook uses the same React components and CSS as the application, with the committed site indexes and artifact fixtures. Open **Product / Site home** or **Navigation / Tree directions** to compare three browse-tree treatments—quiet indentation, subtle branch guides, and full path labels—using fixtures with up to four directory levels. The **Product / Workspace** stories show the tree in context with the artifact viewer; other **Navigation** stories cover the site picker and command-palette search modes.
+Storybook uses the same React components and CSS as the application, with the committed site indexes and artifact fixtures. The workspace defaults to full-path labels on Site Home, branch guides in the sidebar, and a grouped command palette. Open **Product / Site home** or **Navigation / Tree directions** to compare the three browse-tree treatments—quiet indentation, subtle branch guides, and full path labels—using fixtures with up to four directory levels. Other **Navigation** stories cover the site picker and command-palette search modes.
 
 Create a production build with:
 

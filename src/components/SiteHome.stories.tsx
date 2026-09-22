@@ -26,7 +26,7 @@ function SiteHomeStory({ treeStyle, theme }: SiteHomeStoryArgs) {
 const meta = {
   title: 'Product/Site home',
   args: {
-    treeStyle: 'branch-guides',
+    treeStyle: 'path-list',
     theme: 'light',
   },
   argTypes: {
