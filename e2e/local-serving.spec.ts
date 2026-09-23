@@ -214,6 +214,24 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   await frontendPage.close()
 })
 
+test('the command palette shortcut works while the artifact iframe has focus', async ({ page }) => {
+  await page.goto('/sre/incidents/checkout-latency')
+  const artifact = page.frameLocator('iframe[title="Checkout latency incident review"]')
+  const summaryHeading = artifact.getByRole('heading', { name: 'Summary' })
+  await expect(summaryHeading).toBeVisible()
+  await summaryHeading.click()
+  await summaryHeading.press('Control+k')
+
+  const palette = page.getByRole('dialog', { name: 'Command palette' })
+  await expect(palette).toBeVisible()
+  const search = palette.getByRole('textbox', { name: 'Search artifacts, sites, commands, and headings' })
+  await expect(search).toBeFocused()
+  await search.fill('Platform topology')
+  await search.press('Enter')
+  await expect(palette).toBeHidden()
+  await expect(page).toHaveURL(/\/sre\/architecture\/platform-topology$/)
+})
+
 function artifactAssetPaths(siteId: string, artifactPath: string) {
   const root = `/_artifacts/${siteId}/${artifactPath}/assets`
   return [

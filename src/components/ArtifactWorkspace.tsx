@@ -92,6 +92,15 @@ export function ArtifactWorkspace({
     setPaletteSeed(seed)
   }, [])
 
+  const handleArtifactKeyDown = useCallback((event: KeyboardEvent) => {
+    const modifier = event.metaKey || event.ctrlKey
+    if (modifier && event.key.toLocaleLowerCase() === 'k') {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      openPalette('')
+    }
+  }, [openPalette])
+
   const closePalette = useCallback(() => {
     setPaletteSeed(null)
     window.requestAnimationFrame(() => {
@@ -376,6 +385,9 @@ export function ArtifactWorkspace({
                 key={currentArtifact.artifactUrl}
                 src={iframeSrc}
                 title={currentArtifact.title}
+                onLoad={(event) => {
+                  event.currentTarget.contentWindow?.addEventListener('keydown', handleArtifactKeyDown, true)
+                }}
               />
             ) : route.artifactPath ? (
               <div className="stage-message">
