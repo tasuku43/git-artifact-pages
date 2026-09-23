@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { ArtifactWorkspace } from './components/ArtifactWorkspace'
 import { SitePicker } from './components/SitePicker'
 import { discoverSiteIndexes, IndexLoadError, loadSiteIndex } from './data/indexes'
 import type { SiteIndex } from './domain/index'
+import { isThemeMode, resolveTheme, toggleThemeMode } from './domain/theme'
+import type { ResolvedTheme, ThemeMode } from './domain/theme'
 import { parseRoute, type AppRoute } from './routing'
 
 type LoadingState<T> =
@@ -35,33 +37,47 @@ function useLocation() {
 }
 
 function useTheme() {
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
     try {
-      return window.localStorage.getItem('git-artifact-pages-theme') === 'dark' ? 'dark' : 'light'
+      const storedMode = window.localStorage.getItem('git-artifact-pages-theme')
+      return isThemeMode(storedMode) ? storedMode : 'system'
     } catch {
-      return 'light'
+      return 'system'
     }
   })
+  const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() => (
+    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  ))
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const syncSystemTheme = (event: MediaQueryListEvent) => {
+      setSystemTheme(event.matches ? 'dark' : 'light')
+    }
+    mediaQuery.addEventListener('change', syncSystemTheme)
+    return () => mediaQuery.removeEventListener('change', syncSystemTheme)
+  }, [])
+
+  const theme = resolveTheme(themeMode, systemTheme)
+  useLayoutEffect(() => {
     document.documentElement.dataset.theme = theme
     try {
-      window.localStorage.setItem('git-artifact-pages-theme', theme)
+      window.localStorage.setItem('git-artifact-pages-theme', themeMode)
     } catch {
       // The selected theme still applies for this session when storage is unavailable.
     }
-  }, [theme])
+  }, [theme, themeMode])
 
   const toggleTheme = useCallback(() => {
-    setTheme((current) => current === 'light' ? 'dark' : 'light')
-  }, [])
+    setThemeMode((current) => toggleThemeMode(current, systemTheme))
+  }, [systemTheme])
 
-  return { theme, toggleTheme }
+  return { themeMode, theme, toggleTheme, setThemeMode }
 }
 
 function App() {
   const { route, pathname, hash, navigate } = useLocation()
-  const { theme, toggleTheme } = useTheme()
+  const { themeMode, theme, toggleTheme, setThemeMode } = useTheme()
   const [catalog, setCatalog] = useState<LoadingState<SiteIndex[]>>({ status: 'loading' })
 
   useEffect(() => {
@@ -95,8 +111,10 @@ function App() {
       catalog={catalog.status === 'success' ? catalog.data : []}
       catalogLoading={catalog.status === 'loading'}
       navigate={navigate}
+      themeMode={themeMode}
       theme={theme}
       onToggleTheme={toggleTheme}
+      onSetThemeMode={setThemeMode}
     />
   )
 }
@@ -108,8 +126,10 @@ function SitePage({
   catalog,
   catalogLoading,
   navigate,
+  themeMode,
   theme,
   onToggleTheme,
+  onSetThemeMode,
 }: {
   route: Extract<AppRoute, { kind: 'site' }>
   pathname: string
@@ -117,8 +137,10 @@ function SitePage({
   catalog: SiteIndex[]
   catalogLoading: boolean
   navigate: (href: string) => void
-  theme: 'light' | 'dark'
+  themeMode: ThemeMode
+  theme: ResolvedTheme
   onToggleTheme: () => void
+  onSetThemeMode: (mode: ThemeMode) => void
 }) {
   const [indexState, setIndexState] = useState<LoadingState<SiteIndex>>({ status: 'loading' })
 
@@ -154,8 +176,10 @@ function SitePage({
       catalog={catalog}
       catalogLoading={catalogLoading}
       navigate={navigate}
+      themeMode={themeMode}
       theme={theme}
       onToggleTheme={onToggleTheme}
+      onSetThemeMode={onSetThemeMode}
       index={indexState.data}
     />
   )

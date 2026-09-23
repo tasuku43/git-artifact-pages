@@ -3,12 +3,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ArtifactWorkspace } from './ArtifactWorkspace'
 import { parseRoute, type AppRoute } from '../routing'
 import { deepExpandedPaths, deepSreIndex, storyIndexes } from '../stories/fixtures'
+import { resolveTheme, toggleThemeMode } from '../domain/theme'
+import type { ThemeMode } from '../domain/theme'
 
 const indexes = storyIndexes
 
 type WorkspaceStoryArgs = {
   view: 'site-home' | 'artifact'
-  theme: 'light' | 'dark'
+  theme: ThemeMode
   initialSidebarOpen: boolean
 }
 
@@ -19,7 +21,7 @@ function WorkspaceStory({ view, theme, initialSidebarOpen }: WorkspaceStoryArgs)
     artifactPath: view === 'artifact' ? 'incidents/checkout-latency' : undefined,
   }))
   const [hash, setHash] = useState('')
-  const [activeTheme, setActiveTheme] = useState(theme)
+  const [activeThemeMode, setActiveThemeMode] = useState(theme)
   const index = indexes.find(({ site }) => site.id === route.siteId) ?? deepSreIndex
 
   useEffect(() => {
@@ -32,9 +34,11 @@ function WorkspaceStory({ view, theme, initialSidebarOpen }: WorkspaceStoryArgs)
   }, [view])
 
   useEffect(() => {
-    setActiveTheme(theme)
+    setActiveThemeMode(theme)
   }, [theme])
 
+  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  const activeTheme = resolveTheme(activeThemeMode, systemTheme)
   useEffect(() => {
     document.documentElement.dataset.theme = activeTheme
   }, [activeTheme])
@@ -56,8 +60,10 @@ function WorkspaceStory({ view, theme, initialSidebarOpen }: WorkspaceStoryArgs)
       catalog={indexes}
       catalogLoading={false}
       navigate={navigate}
+      themeMode={activeThemeMode}
       theme={activeTheme}
-      onToggleTheme={() => setActiveTheme((current) => current === 'light' ? 'dark' : 'light')}
+      onToggleTheme={() => setActiveThemeMode((current) => toggleThemeMode(current, systemTheme))}
+      onSetThemeMode={setActiveThemeMode}
       index={index}
       initialExpandedPaths={deepExpandedPaths}
       initialSidebarOpen={initialSidebarOpen}
@@ -69,7 +75,7 @@ const meta = {
   title: 'Product/Workspace',
   args: {
     view: 'artifact',
-    theme: 'light',
+    theme: 'system',
     initialSidebarOpen: true,
   },
   argTypes: {
@@ -80,7 +86,7 @@ const meta = {
     },
     theme: {
       control: 'radio',
-      options: ['light', 'dark'],
+      options: ['system', 'light', 'dark'],
     },
     initialSidebarOpen: {
       control: 'boolean',

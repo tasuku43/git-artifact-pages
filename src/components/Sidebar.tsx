@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ArtifactIndexEntry, SiteIndex, SiteSummary } from '../domain/index'
+import { themeModeActionLabel, themeModeIcon } from '../domain/theme'
+import type { ResolvedTheme, ThemeMode } from '../domain/theme'
 import { ArtifactTree, type TreeStyle } from './ArtifactTree'
 import { Icon } from './Icon'
 
@@ -14,6 +16,7 @@ export function Sidebar({
   onOpenArtifact,
   onToggleTheme,
   theme,
+  themeMode,
   onCollapse,
   treeStyle = 'branch-guides',
 }: {
@@ -26,7 +29,8 @@ export function Sidebar({
   onOpenPalette: (seed: string) => void
   onOpenArtifact: (artifact: ArtifactIndexEntry) => void
   onToggleTheme: () => void
-  theme: 'light' | 'dark'
+  theme: ResolvedTheme
+  themeMode: ThemeMode
   onCollapse: () => void
   treeStyle?: TreeStyle
 }) {
@@ -196,11 +200,11 @@ export function Sidebar({
         </span>
         <button
           className="icon-button theme-toggle"
-          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+          title={themeModeActionLabel(themeMode, theme)}
+          aria-label={themeModeActionLabel(themeMode, theme)}
           onClick={onToggleTheme}
         >
-          <Icon name={theme === 'light' ? 'moon' : 'sun'} size={15} />
+          <Icon name={themeModeIcon(themeMode)} size={15} />
         </button>
       </footer>
     </aside>

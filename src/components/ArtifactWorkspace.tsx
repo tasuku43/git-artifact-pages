@@ -5,6 +5,8 @@ import { Sidebar } from './Sidebar'
 import { SiteHome } from './SiteHome'
 import type { TreeStyle } from './ArtifactTree'
 import type { ArtifactIndexEntry, SiteIndex, SiteSummary } from '../domain/index'
+import { themeModeActionLabel, themeModeIcon } from '../domain/theme'
+import type { ResolvedTheme, ThemeMode } from '../domain/theme'
 import { artifactRouteHref, type AppRoute } from '../routing'
 
 type SiteRoute = Extract<AppRoute, { kind: 'site' }>
@@ -17,8 +19,10 @@ export function ArtifactWorkspace({
   catalog,
   catalogLoading,
   navigate,
+  themeMode,
   theme,
   onToggleTheme,
+  onSetThemeMode,
   index,
   sidebarTreeStyle = 'branch-guides',
   siteHomeTreeStyle = 'path-list',
@@ -31,8 +35,10 @@ export function ArtifactWorkspace({
   catalog: SiteIndex[]
   catalogLoading: boolean
   navigate: (href: string) => void
-  theme: 'light' | 'dark'
+  themeMode: ThemeMode
+  theme: ResolvedTheme
   onToggleTheme: () => void
+  onSetThemeMode: (mode: ThemeMode) => void
   index: SiteIndex
   sidebarTreeStyle?: TreeStyle
   siteHomeTreeStyle?: TreeStyle
@@ -166,7 +172,21 @@ export function ArtifactWorkspace({
       onSelect: () => togglePanel('contents'),
     },
     { title: 'Go to site home', onSelect: () => navigate(`/${encodeURIComponent(index.site.id)}`) },
-    { title: 'Switch theme', onSelect: onToggleTheme },
+    {
+      title: 'Use light theme',
+      subtitle: themeMode === 'light' ? 'Current' : undefined,
+      onSelect: () => onSetThemeMode('light'),
+    },
+    {
+      title: 'Use dark theme',
+      subtitle: themeMode === 'dark' ? 'Current' : undefined,
+      onSelect: () => onSetThemeMode('dark'),
+    },
+    {
+      title: 'Use system theme',
+      subtitle: themeMode === 'system' ? 'Current' : undefined,
+      onSelect: () => onSetThemeMode('system'),
+    },
     {
       title: 'Copy artifact link',
       available: Boolean(currentArtifact),
@@ -224,6 +244,7 @@ export function ArtifactWorkspace({
         onOpenArtifact={openArtifact}
         onToggleTheme={onToggleTheme}
         theme={theme}
+        themeMode={themeMode}
         onCollapse={() => updateSidebarOpen(false, true)}
         treeStyle={sidebarTreeStyle}
       />
@@ -270,11 +291,11 @@ export function ArtifactWorkspace({
           <div className="collapsed-rail-group">
             <button
               className="collapsed-rail-button"
-              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
-              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+              title={themeModeActionLabel(themeMode, theme)}
+              aria-label={themeModeActionLabel(themeMode, theme)}
               onClick={onToggleTheme}
             >
-              <Icon name={theme === 'light' ? 'moon' : 'sun'} size={16} />
+              <Icon name={themeModeIcon(themeMode)} size={16} />
             </button>
           </div>
         </aside>

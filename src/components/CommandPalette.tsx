@@ -5,6 +5,7 @@ import { Icon } from './Icon'
 
 export type PaletteCommand = {
   title: string
+  subtitle?: string
   shortcut?: string
   onSelect: () => void
   available?: boolean
@@ -227,6 +228,7 @@ function buildSections({
         id: `command:${command.title}`,
         kind: 'command' as const,
         title: command.title,
+        subtitle: command.subtitle,
         shortcut: command.shortcut,
         onSelect: command.onSelect,
       }))
@@ -254,6 +256,7 @@ function buildSections({
         id: `command:${command.title}`,
         kind: 'command' as const,
         title: command.title,
+        subtitle: command.subtitle,
         shortcut: command.shortcut,
         onSelect: command.onSelect,
       }))

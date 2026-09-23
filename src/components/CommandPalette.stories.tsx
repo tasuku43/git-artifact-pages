@@ -17,7 +17,9 @@ function PaletteStory({ seed }: PaletteStoryArgs) {
     { title: 'Toggle sidebar', shortcut: '⌘ B', onSelect: () => undefined },
     { title: 'Toggle contents', shortcut: '⌘ ⇧ O', onSelect: () => undefined },
     { title: 'Go to site home', onSelect: () => undefined },
-    { title: 'Switch theme', onSelect: () => undefined },
+    { title: 'Use light theme', onSelect: () => undefined },
+    { title: 'Use dark theme', onSelect: () => undefined },
+    { title: 'Use system theme', subtitle: 'Current', onSelect: () => undefined },
   ]
 
   return isOpen ? (

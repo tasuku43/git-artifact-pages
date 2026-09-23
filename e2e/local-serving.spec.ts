@@ -233,30 +233,62 @@ function waitForResponses(page: Page, paths: string[]) {
 }
 
 test('the collapsed rail searches artifacts and switches sites', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' })
   const frontendIndex = page.waitForResponse((response) => {
     return new URL(response.url()).pathname === '/_indexes/frontend.json'
   })
 
   await page.goto('/sre/incidents/checkout-latency')
   await frontendIndex
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('git-artifact-pages-theme'))).toBe('system')
 
   await page.getByRole('button', { name: 'Collapse sidebar' }).click()
   await expect(page.getByRole('button', { name: 'Expand navigation' })).toBeVisible()
 
-  await page.getByRole('button', { name: 'Switch to dark theme' }).click()
+  await page.getByRole('button', { name: /Theme: System/ }).click()
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('git-artifact-pages-theme'))).toBe('dark')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await page.getByRole('button', { name: 'Switch to light theme' }).click()
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await page.emulateMedia({ colorScheme: 'light' })
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+
+  await page.getByRole('button', { name: /Theme: Dark/ }).click()
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('git-artifact-pages-theme'))).toBe('light')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await page.emulateMedia({ colorScheme: 'dark' })
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
 
   await page.getByRole('button', { name: 'Search artifacts and pages' }).click()
   const palette = page.getByRole('dialog', { name: 'Command palette' })
   const search = palette.getByRole('textbox', { name: 'Search artifacts, sites, commands, and headings' })
-  await search.fill('>Switch theme')
-  await expect(palette.getByRole('option', { name: 'Switch theme' })).toBeVisible()
+  await search.fill('>theme')
+  await expect(palette.getByRole('option', { name: 'Use light theme' })).toContainText('Current')
+  await search.fill('>Use dark theme')
+  await expect(palette.getByRole('option', { name: 'Use dark theme' })).toBeVisible()
   await search.press('Enter')
   await expect(palette).toBeHidden()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await page.getByRole('button', { name: 'Switch to light theme' }).click()
+  await page.emulateMedia({ colorScheme: 'light' })
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('git-artifact-pages-theme'))).toBe('dark')
+  await page.getByRole('button', { name: 'Collapse sidebar' }).click()
+
+  await page.getByRole('button', { name: 'Search artifacts and pages' }).click()
+  const systemPalette = page.getByRole('dialog', { name: 'Command palette' })
+  const systemSearch = systemPalette.getByRole('textbox', { name: 'Search artifacts, sites, commands, and headings' })
+  await systemSearch.fill('>Use system theme')
+  await systemSearch.press('Enter')
+  await expect(systemPalette).toBeHidden()
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('git-artifact-pages-theme'))).toBe('system')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await page.emulateMedia({ colorScheme: 'light' })
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
 
   await page.getByRole('button', { name: 'Search artifacts and pages' }).click()
   const searchPalette = page.getByRole('dialog', { name: 'Command palette' })

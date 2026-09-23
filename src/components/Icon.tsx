@@ -11,6 +11,7 @@ type IconName =
   | 'close'
   | 'moon'
   | 'sun'
+  | 'monitor'
   | 'arrow'
   | 'clock'
   | 'tree'
@@ -53,6 +54,8 @@ export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
       return <svg {...common}><path d="M12.9 9.4A5.8 5.8 0 0 1 6.6 3.1 5.8 5.8 0 1 0 12.9 9.4Z" /></svg>
     case 'sun':
       return <svg {...common}><circle cx="8" cy="8" r="3" /><path d="M8 1.5v1.3M8 13.2v1.3M14.5 8h-1.3M2.8 8H1.5m11.1-4.6-.9.9m-7.4 7.4-.9.9m9.2 0-.9-.9M4.3 4.3l-.9-.9" /></svg>
+    case 'monitor':
+      return <svg {...common}><rect x="1.8" y="2.4" width="12.4" height="8.8" rx="1.7" /><path d="M5.5 13.6h5M8 11.2v2.4" /></svg>
     case 'arrow':
       return <svg {...common}><path d="M3 8h9m-3.5-3.5L12 8l-3.5 3.5" /></svg>
     case 'clock':
