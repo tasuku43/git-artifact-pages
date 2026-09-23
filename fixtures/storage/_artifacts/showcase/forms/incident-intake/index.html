@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Incident intake</title>
+  <link rel="stylesheet" href="./assets/css/styles.css">
+</head>
+<body>
+  <header class="form-header"><a href="#request" class="brand"><span class="brand-mark">R</span><span>RESPONSE DESK<small>OPERATIONS / INTAKE</small></span></a><div class="header-status"><span></span> INTERNAL <b>·</b> SECURE WORKSPACE</div></header>
+  <main class="layout">
+    <section class="form-intro"><p class="eyebrow">INCIDENT RESPONSE <span>—</span> FORM 01</p><h1 id="request">Incident intake</h1><p class="lede">Share what you know so far. A response lead will help fill the gaps; a perfect timeline can come later.</p><div class="progress"><span>01 <b>ABOUT THE EVENT</b></span><i></i><span>02 <b>IMPACT</b></span><i></i><span>03 <b>REVIEW</b></span></div><div class="help-card"><span class="help-icon">i</span><p><strong>Is anyone in immediate danger?</strong><br>Use your local emergency channel first. This form is not monitored for emergencies.</p></div></section>
+    <form class="intake-form">
+      <section class="form-section" id="details"><div class="section-head"><span class="section-number">01</span><div><h2>What happened?</h2><p>Start with the clearest signal you have.</p></div></div>
+        <div class="field"><label for="summary">Short description <span class="required">*</span></label><input id="summary" name="summary" type="text" placeholder="e.g. Checkout requests timing out in EU" required><small>Use plain language. You can refine the title later.</small></div>
+        <div class="field-row"><div class="field"><label for="service">Affected service <span class="required">*</span></label><select id="service" name="service" required><option value="">Choose a service</option><option>Checkout</option><option>Identity</option><option>Search and discovery</option><option>Data platform</option><option>Not sure yet</option></select></div><div class="field"><label for="first-seen">When did you first notice it?</label><input id="first-seen" name="first-seen" type="datetime-local"></div></div>
+        <div class="field"><label for="symptoms">What are you seeing?</label><textarea id="symptoms" name="symptoms" rows="4" placeholder="Share the user-visible symptoms, alerts, or recent changes…"></textarea><small>Links to dashboards or deploys are helpful, but not required.</small></div>
+      </section>
+
+      <section class="form-section" id="impact"><div class="section-head"><span class="section-number">02</span><div><h2>Impact and response</h2><p>A rough estimate is a useful place to begin.</p></div></div>
+        <fieldset class="field"><legend>How broad is the impact?</legend><div class="radio-grid"><label class="radio-card"><input type="radio" name="scope" value="limited"><span class="radio-mark"></span><span><b>Limited</b><small>A small set of users or one region</small></span></label><label class="radio-card"><input type="radio" name="scope" value="widespread"><span class="radio-mark"></span><span><b>Widespread</b><small>Many users or multiple services</small></span></label><label class="radio-card"><input type="radio" name="scope" value="unknown" checked><span class="radio-mark"></span><span><b>Not sure</b><small>We are still assessing</small></span></label></div></fieldset>
+        <div class="field"><label for="lead">Response lead <span class="optional">OPTIONAL</span></label><input id="lead" name="lead" type="email" placeholder="name@example.com"><small>Leave blank if a lead has not been assigned.</small></div>
+        <label class="checkbox-row"><input type="checkbox" name="follow-up"><span class="checkbox-custom">✓</span><span><b>Send me a copy</b><small>We will send a summary to the response lead above.</small></span></label>
+        <div class="form-actions"><span><span class="required">*</span> Required field</span><button type="button">Save draft <span>⌄</span></button><button class="submit-button" type="button">Continue <span>→</span></button></div>
+      </section>
+    </form>
+    <aside class="side-note"><div class="aside-mark">↗</div><p class="eyebrow">YOU CAN COME BACK</p><h2>Useful now<br>beats perfect later.</h2><p>Your draft stays in this browser. Add a detail whenever you have it; the response team will help connect the dots.</p><div class="note-meta"><span>RESPONSE GUIDELINES</span><a href="#details">Read the short guide <b>↗</b></a></div></aside>
+  </main>
+  <footer><span>RESPONSE DESK <b>·</b> INTERNAL OPERATIONS</span><span>NEED HELP? <a href="mailto:response@example.com">Contact the response lead</a></span></footer>
+</body>
+</html>

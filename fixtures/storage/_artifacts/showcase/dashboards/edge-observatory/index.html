@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Edge latency observatory</title>
+  <link rel="stylesheet" href="./assets/css/styles.css">
+</head>
+<body>
+  <div class="console-shell">
+    <header class="topbar">
+      <a class="brand" href="#overview"><span class="brand-glyph">N</span><span>NORTHSTAR <small>OBSERVABILITY</small></span></a>
+      <nav aria-label="Dashboard"><a class="active" href="#overview">Overview</a><a href="#routes">Routes</a><a href="#signals">Signals</a></nav>
+      <div class="live"><span></span> LIVE <time>14:32:08 UTC</time></div>
+    </header>
+    <main>
+      <section class="dashboard-heading" id="overview">
+        <div><p class="eyebrow">GLOBAL EDGE / PRODUCTION</p><h1>Edge latency observatory</h1><p class="subhead">A quiet read on the path between a customer and a useful response.</p></div>
+        <button class="range-button" type="button"><span>◷</span> Last 60 minutes <span class="chevron">⌄</span></button>
+      </section>
+
+      <section class="stat-grid" aria-label="Current service metrics">
+        <article class="stat-card"><div class="stat-label">P95 RESPONSE <span>↗</span></div><strong>182<small>ms</small></strong><div class="stat-foot"><span class="good">− 12 ms</span> vs previous hour</div></article>
+        <article class="stat-card"><div class="stat-label">REQUEST RATE <span>↗</span></div><strong>24.8<small>k/s</small></strong><div class="stat-foot"><span class="neutral">+ 3.1%</span> within expected range</div></article>
+        <article class="stat-card"><div class="stat-label">ERROR BUDGET <span>↗</span></div><strong>96.4<small>%</small></strong><div class="stat-foot"><span class="good">On track</span> 21 days remaining</div></article>
+        <article class="stat-card"><div class="stat-label">ACTIVE REGIONS <span>↗</span></div><strong>08<small> / 08</small></strong><div class="stat-foot"><span class="good">All healthy</span> no failover events</div></article>
+      </section>
+
+      <section class="panel chart-panel" id="traffic">
+        <div class="panel-heading"><div><p class="eyebrow">LATENCY DISTRIBUTION</p><h2>Request volume</h2></div><div class="legend"><span><i class="legend-latency"></i> p95 latency</span><span><i class="legend-volume"></i> traffic</span><button type="button" aria-label="More chart options">···</button></div></div>
+        <div class="chart">
+          <div class="axis-labels"><span>400 ms</span><span>300 ms</span><span>200 ms</span><span>100 ms</span></div>
+          <svg viewBox="0 0 1000 220" role="img" aria-label="Latency has remained steady with a brief increase near 11 AM">
+            <defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#58d8bd" stop-opacity=".24"/><stop offset="1" stop-color="#58d8bd" stop-opacity="0"/></linearGradient></defs>
+            <g class="grid-lines"><path d="M0 20H1000M0 75H1000M0 130H1000M0 185H1000"/></g>
+            <path class="traffic-area" d="M0 173C40 167 56 155 96 162s58-23 99-17 46 25 88 8 62-27 100-15 42 24 81 17 47-28 89-22 50 20 90 9 53-15 91-8 53 24 92 4 51-24 90-17 49 25 84 12v70H0z"/>
+            <path class="latency-line" d="M0 108c45-2 60-8 96-6s54 4 99-2 50 2 88-1 50 4 100-5 47-2 81 2 45 6 89-2 50 1 90 5 45 2 91-6 57 4 92-2 54 4 90-2 48 1 84 5"/>
+            <circle class="chart-point" cx="553" cy="103" r="4"/>
+          </svg>
+          <div class="time-labels"><span>13:30</span><span>13:45</span><span>14:00</span><span>14:15</span><span>14:30</span></div>
+        </div>
+        <div class="chart-note"><span class="note-dot"></span> A short rise at 14:06 coincided with cache warmup in <code>eu-west-1</code>. No customer impact observed.</div>
+      </section>
+
+      <section class="panel routes-panel" id="routes">
+        <div class="panel-heading"><div><p class="eyebrow">WHERE TIME GOES</p><h2>Slowest routes</h2></div><a href="#signals" class="text-link">View route map <span>→</span></a></div>
+        <div class="table-scroll"><table><thead><tr><th>ROUTE</th><th>REGION</th><th>P95</th><th>REQUESTS</th><th>HEALTH</th></tr></thead>
+          <tbody>
+            <tr><td><code>POST</code><strong>/checkout/confirm</strong></td><td>us-east-1</td><td class="numeric">284 ms</td><td class="numeric">8,421 / min</td><td><span class="health"><i></i> Healthy</span></td></tr>
+            <tr><td><code>GET</code><strong>/catalog/search</strong></td><td>eu-west-1</td><td class="numeric">219 ms</td><td class="numeric">6,104 / min</td><td><span class="health"><i></i> Healthy</span></td></tr>
+            <tr><td><code>GET</code><strong>/account/profile</strong></td><td>ap-northeast-1</td><td class="numeric">177 ms</td><td class="numeric">3,882 / min</td><td><span class="health"><i></i> Healthy</span></td></tr>
+          </tbody>
+        </table></div>
+      </section>
+
+      <section class="signal-row" id="signals"><div><p class="eyebrow">SIGNALS TO WATCH</p><h2>Nothing needs your attention.</h2></div><p>Three service-level indicators are healthy. The next scheduled review is <strong>Thursday, 10:00 UTC.</strong></p></section>
+    </main>
+    <footer><span>OBSERVABILITY PLATFORM <b>·</b> DATA REFRESHES EVERY 30 SECONDS</span><span>STATUS <i></i> NOMINAL</span></footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Inclusive component handbook</title>
+  <link rel="stylesheet" href="./assets/css/styles.css">
+</head>
+<body>
+  <header class="site-header"><a href="#orientation" class="brand"><span>G</span> GOODFORM <small>DESIGN SYSTEM</small></a><nav aria-label="Primary"><a href="#orientation">Principles</a><a href="#keyboard">Patterns</a><a href="#example">Resources</a></nav><button class="version" type="button">v2.4 <span>⌄</span></button></header>
+  <div class="docs-layout">
+    <aside class="docs-nav" aria-label="Documentation sections"><p class="nav-label">FOUNDATIONS</p><a class="current" href="#orientation">Inclusive design</a><a href="#color">Color and meaning</a><a href="#keyboard">Keyboard access</a><p class="nav-label nav-spacer">PATTERNS</p><a href="#example">Alerts</a><a href="#example">Forms</a><a href="#example">Navigation</a><div class="nav-note"><span>✳</span><p>Built for more people, in more contexts.</p></div></aside>
+    <main class="docs-content">
+      <div class="breadcrumbs"><span>Foundations</span><b>/</b><span>Inclusive design</span></div>
+      <article>
+        <p class="eyebrow">FOUNDATIONS <span>·</span> 6 MIN READ</p>
+        <h1 id="orientation">Inclusive component handbook</h1>
+        <p class="intro">A practical starting point for interfaces that stay understandable when the environment, input, or attention changes.</p>
+        <div class="callout"><span class="callout-icon">✳</span><p><strong>Start with the person, not the component.</strong><br>Patterns help teams move faster, but context determines whether a pattern is useful.</p></div>
+
+        <section id="color"><h2>Color is not the only signal</h2><p>Use color to reinforce a message, never to carry it alone. Pair status with a label, a shape, or a clear change in content so meaning survives grayscale and low-contrast conditions.</p><div class="status-examples"><div><span class="status-icon success">✓</span><span><b>Complete</b><small>Your changes are saved.</small></span></div><div><span class="status-icon warning">!</span><span><b>Needs review</b><small>One required field is missing.</small></span></div><div><span class="status-icon info">i</span><span><b>More context</b><small>This setting applies to all projects.</small></span></div></div></section>
+
+        <section id="keyboard"><h2>Keyboard before pointer</h2><p>Every action should have a predictable focus target. Keep the focus indicator visible, preserve a logical tab order, and avoid making hover the only way to discover an affordance.</p><div class="keyboard-demo"><span>Move through the actions</span><button type="button">Save draft <kbd>Tab</kbd></button><button class="secondary" type="button">Preview <kbd>Tab</kbd></button><a href="#example">Skip to example <kbd>Tab</kbd></a></div></section>
+
+        <section id="example"><h2>A resilient alert</h2><p>Keep the message concise. Put the outcome first, then offer one clear next step.</p><div class="code-label"><span>HTML</span><span>SEMANTIC BY DEFAULT</span></div><pre><code>&lt;div role="status" aria-live="polite"&gt;
+  &lt;p&gt;Your changes are saved.&lt;/p&gt;
+&lt;/div&gt;</code></pre><p class="last-updated">Last reviewed <time datetime="2026-09-18">September 18, 2026</time> <span>·</span> Maintained by the Design Systems group</p></section>
+      </article>
+    </main>
+  </div>
+</body>
+</html>

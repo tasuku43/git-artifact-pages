@@ -6,11 +6,13 @@ test('nginx index listing discovers sites and opens a site home', async ({ page 
   const directoryListing = await listing.text()
   expect(directoryListing).toContain('sre.json')
   expect(directoryListing).toContain('frontend.json')
+  expect(directoryListing).toContain('showcase.json')
 
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Choose a site' })).toBeVisible()
   await expect(page.getByRole('button', { name: /SRE/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Frontend/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /HTML Showcase/ })).toBeVisible()
 
   await page.getByRole('button', { name: /SRE/ }).click()
   await expect(page).toHaveURL(/\/sre$/)
@@ -249,8 +251,20 @@ test('the collapsed rail searches artifacts and switches sites', async ({ page }
   await page.getByRole('button', { name: 'Search artifacts and pages' }).click()
   const palette = page.getByRole('dialog', { name: 'Command palette' })
   const search = palette.getByRole('textbox', { name: 'Search artifacts, sites, commands, and headings' })
-  await search.fill('Platform topology')
-  await palette.getByRole('option', { name: /Platform topology/ }).click()
+  await search.fill('>Switch theme')
+  await expect(palette.getByRole('option', { name: 'Switch theme' })).toBeVisible()
+  await search.press('Enter')
+  await expect(palette).toBeHidden()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await page.getByRole('button', { name: 'Switch to light theme' }).click()
+
+  await page.getByRole('button', { name: 'Search artifacts and pages' }).click()
+  const searchPalette = page.getByRole('dialog', { name: 'Command palette' })
+  const artifactSearch = searchPalette.getByRole('textbox', { name: 'Search artifacts, sites, commands, and headings' })
+  await artifactSearch.fill('Platform topology')
+  await expect(searchPalette.getByRole('option', { name: /Platform topology/ })).toBeVisible()
+  await artifactSearch.press('Enter')
+  await expect(searchPalette).toBeHidden()
 
   await expect(page).toHaveURL(/\/sre\/architecture\/platform-topology$/)
   await expect(page.getByRole('button', { name: 'Expand navigation' })).toBeVisible()
@@ -263,4 +277,42 @@ test('the collapsed rail searches artifacts and switches sites', async ({ page }
 
   await expect(page).toHaveURL(/\/frontend$/)
   await expect(page.getByRole('heading', { name: 'Frontend', exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Switch site. Current site: Frontend' }).click()
+  const showcasePalette = page.getByRole('dialog', { name: 'Command palette' })
+  await showcasePalette.getByRole('option', { name: /HTML Showcase/ }).click()
+  await expect(page).toHaveURL(/\/showcase$/)
+  await expect(page.getByRole('heading', { name: 'HTML Showcase', exact: true })).toBeVisible()
+})
+
+test('HTML showcase covers distinct page styles in the artifact iframe', async ({ page }) => {
+  await page.route('https://fonts.googleapis.com/**', (route) => route.fulfill({
+    status: 200,
+    contentType: 'text/css',
+    body: '',
+  }))
+
+  const examples = [
+    { path: 'editorial/field-notes', heading: /Designing for resilience/ },
+    { path: 'dashboards/edge-observatory', heading: 'Edge latency observatory' },
+    { path: 'handbook/inclusive-components', heading: 'Inclusive component handbook' },
+    { path: 'reports/cloud-spend-review', heading: /Cloud spend review/ },
+    { path: 'presentations/resilient-by-design', heading: /Resilient by design/ },
+    { path: 'product/atlas-launch', heading: /Make space for the work/ },
+    { path: 'forms/incident-intake', heading: 'Incident intake' },
+  ]
+
+  for (const example of examples) {
+    const stylesheetResponse = page.waitForResponse((response) => {
+      return new URL(response.url()).pathname === `/_artifacts/showcase/${example.path}/assets/css/styles.css`
+    })
+    await page.goto(`/showcase/${example.path}`)
+    const artifact = page.frameLocator('iframe')
+    await expect(artifact.getByRole('heading', { name: example.heading })).toBeVisible()
+    expect((await stylesheetResponse).status()).toBe(200)
+  }
+
+  await page.goto('/showcase/dashboards/edge-observatory')
+  const dashboard = page.frameLocator('iframe')
+  await expect(dashboard.locator('body')).toHaveCSS('background-color', 'rgb(11, 17, 24)')
 })

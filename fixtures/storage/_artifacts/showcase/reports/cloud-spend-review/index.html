@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cloud spend review · Q3</title>
+  <link rel="stylesheet" href="./assets/css/styles.css">
+</head>
+<body>
+  <header class="report-bar"><a class="brand" href="#overview"><span>F</span> FINOPS <small>REPORTING</small></a><div class="report-context"><span>Engineering</span><b>/</b><span>Cloud costs</span><b>/</b><strong>Q3 review</strong></div><button class="export-button" type="button"><span>↓</span> Export report</button></header>
+  <main>
+    <section class="report-head" id="overview"><div><p class="eyebrow">FINANCIAL OPERATIONS <span>·</span> QUARTERLY REVIEW</p><h1>Cloud spend review <span>Q3</span></h1><p class="lede">A clear view of where infrastructure dollars went, what changed, and what we can improve next.</p></div><div class="report-date"><span>REPORTING PERIOD</span><strong>Jul 01 — Sep 30, 2026</strong><small>Compared with Q2 2026</small></div></section>
+
+    <section class="summary-grid" aria-label="Quarterly cost summary">
+      <article class="summary-card primary"><span class="label">TOTAL SPEND</span><strong>$482,610</strong><span class="delta good">↓ 4.8% <small>vs. last quarter</small></span><div class="mini-bars" aria-hidden="true"><i style="--h:45%"></i><i style="--h:58%"></i><i style="--h:51%"></i><i style="--h:76%"></i><i style="--h:64%"></i><i style="--h:48%"></i><i style="--h:39%"></i><i style="--h:32%"></i></div></article>
+      <article class="summary-card"><span class="label">COST PER 1K REQUESTS</span><strong>$0.084</strong><span class="delta good">↓ 7.2% <small>efficiency improved</small></span><div class="sparkline"><svg viewBox="0 0 140 34" aria-hidden="true"><path d="M1 9 20 15 38 11 56 22 74 18 92 24 112 19 139 29"/></svg></div></article>
+      <article class="summary-card"><span class="label">COMMITMENT COVERAGE</span><strong>71.3<small>%</small></strong><span class="delta watch">Target 75% <small>by year-end</small></span><div class="coverage-track"><i style="width:71.3%"></i></div></article>
+    </section>
+
+    <section class="section" id="spend"><div class="section-heading"><div><p class="eyebrow">WHERE THE MONEY WENT</p><h2>Monthly cost movement</h2></div><div class="legend"><span><i class="compute"></i> Compute</span><span><i class="storage"></i> Storage</span><span><i class="network"></i> Network</span></div></div>
+      <div class="chart-card"><div class="chart-y"><span>$180k</span><span>$120k</span><span>$60k</span><span>$0</span></div><div class="bar-chart" role="img" aria-label="Stacked columns show monthly cloud spend trending down from July to September"><div class="grid-lines"><i></i><i></i><i></i><i></i></div><div class="month"><div class="stack" style="--compute:62%;--storage:19%;--network:11%"></div><span>JUL</span></div><div class="month"><div class="stack" style="--compute:57%;--storage:17%;--network:10%"></div><span>AUG</span></div><div class="month"><div class="stack" style="--compute:53%;--storage:17%;--network:9%"></div><span>SEP</span></div></div><div class="chart-insight"><span>↓</span> Compute savings offset seasonal traffic growth.</div></div>
+    </section>
+
+    <section class="section" id="actions"><div class="section-heading"><div><p class="eyebrow">SERVICE BREAKDOWN</p><h2>Commitments and actions</h2></div><button class="filter-button" type="button">All teams <span>⌄</span></button></div>
+      <div class="table-wrap"><table><caption class="visually-hidden">Cloud service costs in the third quarter of 2026</caption><thead><tr><th scope="col">SERVICE</th><th scope="col">OWNER</th><th scope="col">Q3 SPEND</th><th scope="col">VS. Q2</th><th scope="col">COVERAGE</th><th scope="col">NEXT ACTION</th></tr></thead><tbody>
+        <tr><td><span class="service-icon compute-icon">▦</span><strong>Compute</strong></td><td>Core Platform</td><td class="money">$218,420</td><td><span class="change down">− 8.2%</span></td><td><div class="coverage"><span><i style="width:82%"></i></span><b>82%</b></div></td><td><span class="action-tag">Optimize</span></td></tr>
+        <tr><td><span class="service-icon storage-icon">◫</span><strong>Storage</strong></td><td>Data Systems</td><td class="money">$96,840</td><td><span class="change up">+ 2.1%</span></td><td><div class="coverage"><span><i style="width:68%"></i></span><b>68%</b></div></td><td><span class="action-tag steady">Review tiers</span></td></tr>
+        <tr><td><span class="service-icon network-icon">⌁</span><strong>Network</strong></td><td>Edge Services</td><td class="money">$74,210</td><td><span class="change down">− 3.4%</span></td><td><div class="coverage"><span><i style="width:53%"></i></span><b>53%</b></div></td><td><span class="action-tag">Optimize</span></td></tr>
+        <tr><td><span class="service-icon database-icon">▤</span><strong>Managed data</strong></td><td>Commerce</td><td class="money">$51,730</td><td><span class="change up">+ 0.8%</span></td><td><div class="coverage"><span><i style="width:75%"></i></span><b>75%</b></div></td><td><span class="action-tag steady">On target</span></td></tr>
+        <tr><td><span class="service-icon tools-icon">◇</span><strong>Developer tools</strong></td><td>Developer Experience</td><td class="money">$41,410</td><td><span class="change down">− 1.9%</span></td><td><div class="coverage"><span><i style="width:46%"></i></span><b>46%</b></div></td><td><span class="action-tag watch">Consolidate</span></td></tr>
+      </tbody></table></div>
+      <p class="table-footnote"><span>↗</span> Values are normalized to USD and exclude tax. Shared services are allocated by metered usage.</p>
+    </section>
+    <footer><span>FINOPS / QUARTERLY REVIEW</span><span>INTERNAL WORKING DOCUMENT <b>·</b> 23 SEP 2026</span></footer>
+  </main>
+</body>
+</html>

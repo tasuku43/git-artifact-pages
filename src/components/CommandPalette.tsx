@@ -87,7 +87,11 @@ export function CommandPalette({
       setSelectedIndex((current) => Math.max(current - 1, 0))
     } else if (event.key === 'Enter') {
       event.preventDefault()
-      entries[selectedIndex]?.onSelect()
+      const selectedEntry = entries[selectedIndex]
+      if (selectedEntry) {
+        onClose()
+        selectedEntry.onSelect()
+      }
     } else if (event.key === 'Escape') {
       event.preventDefault()
       onClose()

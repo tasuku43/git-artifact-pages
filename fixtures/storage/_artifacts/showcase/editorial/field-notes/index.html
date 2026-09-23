@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f3efe7">
+  <title>Designing for resilience — Fieldnotes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/styles.css">
+</head>
+<body>
+  <div class="page-frame">
+    <header class="masthead">
+      <a class="publication" href="#opening"><span class="publication-mark">F</span> FIELDNOTES</a>
+      <span class="issue">SYSTEMS / FIELD NOTE 08</span>
+      <a class="masthead-link" href="#reflection">Our point of view <span>↗</span></a>
+    </header>
+    <main>
+      <article>
+        <header class="story-heading" id="opening">
+          <p class="kicker">THE ART OF KEEPING THINGS WORKING</p>
+          <h1>Designing for<br><em>resilience</em></h1>
+          <p class="dek">Good systems do not avoid every surprise. They make room for people to understand one, respond well, and keep going.</p>
+          <div class="byline"><span class="avatar">AN</span><span><strong>Alex Nguyen</strong><small>Platform editor · 8 min read</small></span><time datetime="2026-09-23">September 23, 2026</time></div>
+        </header>
+
+        <figure class="hero-figure">
+          <img src="./assets/images/field-lines.svg" alt="Fine contour lines gathering around a small point of light">
+          <figcaption><span>FIG. 01</span> A resilient system bends, routes around pressure, and finds its way back.</figcaption>
+        </figure>
+
+        <div class="story-body">
+          <p class="lead"><span class="drop-cap">R</span>esilience is often mistaken for toughness. But the systems that endure are rarely the ones that never move. They are the ones built with enough slack to move safely.</p>
+          <p>That distinction changes the questions we ask. Instead of “How do we prevent every failure?” we can ask “When a component fails, how quickly can the rest of the system make the failure legible?”</p>
+
+          <section id="principles">
+            <p class="section-number">01 — HOLD TWO IDEAS AT ONCE</p>
+            <h2>Three useful tensions</h2>
+            <div class="principle-grid">
+              <article><span>01</span><h3>Fast, not rushed</h3><p>Make the safe path the easy path, and keep space for deliberate decisions.</p></article>
+              <article><span>02</span><h3>Simple, not simplistic</h3><p>Prefer a few clear boundaries over a single boundary that hides every trade-off.</p></article>
+              <article><span>03</span><h3>Automated, still human</h3><p>Let machines handle repetition. Let people handle context, judgment, and care.</p></article>
+            </div>
+          </section>
+
+          <blockquote>“The point is not to make change harmless. It is to make the consequences understandable.”<cite>— A principle from the incident review room</cite></blockquote>
+
+          <section id="practice">
+            <p class="section-number">02 — BUILD THE MUSCLE</p>
+            <h2>Practice over prediction</h2>
+            <p>Teams become resilient by rehearsing the handoffs that matter: how to slow a rollout, how to see the blast radius, and how to restore a known-good state without waiting for a perfect diagnosis.</p>
+            <aside class="margin-note"><span class="note-mark">↳</span><p>Try this in your next review: name one signal that would tell you to stop, and one person empowered to do it.</p></aside>
+          </section>
+
+          <section id="reflection">
+            <p class="section-number">03 — LEAVE A TRACE</p>
+            <h2>A note to the next team</h2>
+            <p>Every system is eventually inherited by someone who was not in the room when it was designed. Give them a map, the reason behind one important choice, and a way to ask for help.</p>
+          </section>
+        </div>
+      </article>
+    </main>
+    <footer class="publication-footer"><span>FIELDNOTES <span class="footer-dot">·</span> A journal about making useful things last</span><span>VOL. 04 / NO. 08</span></footer>
+  </div>
+</body>
+</html>
