@@ -89,7 +89,7 @@ The source directory must be inside the current Git working tree. Tracked files 
 Requires Go 1.26 or newer.
 
 ~~~sh
-go run ./cmd/git-artifact index build \
+go run ./cmd/artifact-pages index build \
   --site sre \
   --site-title SRE \
   --source fixtures/storage/_artifacts/sre \

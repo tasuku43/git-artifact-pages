@@ -38,7 +38,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 		return fmt.Errorf("unknown index command %q", args[1])
 	}
 
-	flags := flag.NewFlagSet("git artifact index build", flag.ContinueOnError)
+	flags := flag.NewFlagSet("artifact-pages index build", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	flags.Usage = func() { writeBuildUsage(stderr) }
 	siteID := flags.String("site", "", "site identifier (for example: sre)")
@@ -89,20 +89,20 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 }
 
 func writeRootUsage(writer io.Writer) {
-	fmt.Fprintln(writer, "Git Artifact Pages CLI")
+	fmt.Fprintln(writer, "Artifact Pages CLI")
 	fmt.Fprintln(writer, "")
 	fmt.Fprintln(writer, "Usage:")
-	fmt.Fprintln(writer, "  git artifact <command>")
+	fmt.Fprintln(writer, "  artifact-pages <command>")
 	fmt.Fprintln(writer, "")
 	fmt.Fprintln(writer, "Commands:")
 	fmt.Fprintln(writer, "  index build   Build a site index without copying or publishing artifacts")
 	fmt.Fprintln(writer, "")
-	fmt.Fprintln(writer, "Run 'git artifact index build --help' for build options.")
+	fmt.Fprintln(writer, "Run 'artifact-pages index build --help' for build options.")
 }
 
 func writeIndexUsage(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage:")
-	fmt.Fprintln(writer, "  git artifact index build [options]")
+	fmt.Fprintln(writer, "  artifact-pages index build [options]")
 	fmt.Fprintln(writer, "")
 	fmt.Fprintln(writer, "Build a site index from ready-to-serve HTML documents in a static content tree.")
 }

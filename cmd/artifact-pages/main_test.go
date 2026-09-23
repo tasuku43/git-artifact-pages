@@ -11,8 +11,8 @@ func TestRunRootHelp(t *testing.T) {
 	if err := run(t.Context(), []string{"--help"}, &stdout, &stderr); err != nil {
 		t.Fatalf("run(--help) error = %v", err)
 	}
-	if !strings.Contains(stdout.String(), "git artifact <command>") {
-		t.Errorf("root help does not show the external Git command usage:\n%s", stdout.String())
+	if !strings.Contains(stdout.String(), "artifact-pages <command>") {
+		t.Errorf("root help does not show the standalone CLI usage:\n%s", stdout.String())
 	}
 }
 
@@ -21,7 +21,7 @@ func TestRunBuildHelp(t *testing.T) {
 	if err := run(t.Context(), []string{"index", "build", "--help"}, &stdout, &stderr); err != nil {
 		t.Fatalf("run(index build --help) error = %v", err)
 	}
-	for _, expected := range []string{"git artifact index build [options]", "--site ID", "--source DIR", "--out DIR"} {
+	for _, expected := range []string{"artifact-pages index build [options]", "--site ID", "--source DIR", "--out DIR"} {
 		if !strings.Contains(stderr.String(), expected) {
 			t.Errorf("build help is missing %q:\n%s", expected, stderr.String())
 		}
