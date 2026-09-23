@@ -230,6 +230,61 @@ func TestBuildUpdatedAtTracksUncommittedAndCommittedAssetChanges(t *testing.T) {
 	}
 }
 
+func TestBuildUsesFilesystemMetadataForGitIgnoredStaticOutput(t *testing.T) {
+	repositoryRoot := initializeGitRepository(t)
+	restoreWorkingDirectory := chdirForTest(t, repositoryRoot)
+	defer restoreWorkingDirectory()
+
+	writeFixtureFile(t, repositoryRoot, ".gitignore", "/static-output/\n")
+	commitFixture(t, repositoryRoot, "ignore generated static output", time.Date(2026, 6, 1, 9, 0, 0, 0, time.UTC))
+
+	pagePath := filepath.Join(repositoryRoot, "static-output/reports/accessibility/index.html")
+	assetPath := filepath.Join(repositoryRoot, "static-output/reports/accessibility/styles.css")
+	writeFixtureFile(t, repositoryRoot, "static-output/reports/accessibility/index.html", `<title>Accessibility report</title><h1 id="summary">Summary</h1>`)
+	writeFixtureFile(t, repositoryRoot, "static-output/reports/accessibility/styles.css", "body { color: navy; }\n")
+	pageUpdatedAt := time.Date(2026, 6, 2, 10, 0, 0, 0, time.UTC)
+	assetUpdatedAt := pageUpdatedAt.Add(time.Hour)
+	if err := os.Chtimes(pagePath, pageUpdatedAt, pageUpdatedAt); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(assetPath, assetUpdatedAt, assetUpdatedAt); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := gitOutput(context.Background(), repositoryRoot, "check-ignore", "-q", "static-output/reports/accessibility/index.html"); err != nil {
+		t.Fatalf("generated HTML is not ignored by Git: %v", err)
+	}
+	result, err := Build(context.Background(), BuildOptions{
+		SiteID:    "wcag",
+		SiteTitle: "WCAG",
+		SourceDir: "static-output",
+		OutputDir: ".local/storage",
+		Now:       func() time.Time { return assetUpdatedAt.Add(time.Hour) },
+	})
+	if err != nil {
+		t.Fatalf("Build() error = %v", err)
+	}
+	if result.ArtifactsIndexed != 1 {
+		t.Fatalf("ArtifactsIndexed = %d, want 1", result.ArtifactsIndexed)
+	}
+
+	indexBytes, err := os.ReadFile(filepath.Join(repositoryRoot, ".local/storage/_indexes/wcag.json"))
+	if err != nil {
+		t.Fatalf("read generated site index: %v", err)
+	}
+	var index SiteIndex
+	if err := json.Unmarshal(indexBytes, &index); err != nil {
+		t.Fatalf("decode generated site index: %v", err)
+	}
+	artifact := index.Artifacts[0]
+	if artifact.UpdatedAt != assetUpdatedAt.Format(time.RFC3339) {
+		t.Errorf("UpdatedAt = %q, want latest static-tree modification time %q", artifact.UpdatedAt, assetUpdatedAt.Format(time.RFC3339))
+	}
+	if artifact.LastCommitter != nil {
+		t.Errorf("LastCommitter = %+v, want omitted for Git-ignored generated output", artifact.LastCommitter)
+	}
+}
+
 func TestBuildRejectsHTMLFilesWithTheSameLogicalRoute(t *testing.T) {
 	repositoryRoot := initializeGitRepository(t)
 	restoreWorkingDirectory := chdirForTest(t, repositoryRoot)

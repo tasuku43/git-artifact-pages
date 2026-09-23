@@ -39,9 +39,11 @@ source repository + sourcePath
 _indexes/<site>.json
 ~~~
 
-The initial Go command indexes each `.html` or `.htm` document, extracts display metadata, and computes artifact update times from Git history and working-tree changes. `index.html`/`index.htm` use their parent directory as the logical route; other documents retain their filename in storage while using an extensionless logical route. It records the Git committer name for the latest relevant change, without resolving a GitHub account or publishing the committer email. It does not copy artifact bytes or publish to a hosting provider; those files remain in their source tree for a later copy/deploy step.
+The initial Go command consumes one publishable static content directory inside a Git working tree. HTML must already be ready to serve; the index builder does not run templates or another site's build, bundle CSS/JavaScript, rewrite URLs, or copy files. It recursively indexes every `.html`/`.htm` file except a root-level `index.html`/`index.htm` (the site landing document); nested index documents use their parent directory as their route, and other filenames retain their filename in storage while using an extensionless logical route. There are no implicit path exclusions, so the selected directory must not include source-only HTML partials such as `_includes` unless they are intended to be published as artifacts.
 
-The full source tree is scanned on each build. Generated 1,000-, 5,000-, and 10,000-file fixture trees are ignored by Git and used to validate whether incremental indexing is needed.
+The builder extracts display metadata and computes update times from Git history and working-tree changes. It records the Git committer name for the latest relevant change, without resolving a GitHub account or publishing the committer email. Untracked files, including ignored generated output, remain indexable, but their update time falls back to filesystem modification times and they have no `lastCommitter`. The command does not copy artifact bytes or publish to a hosting provider; a later publish step should copy the selected static tree unchanged so its relative resources continue to work.
+
+The full source tree is scanned on each build. Temporary file-count fixtures cover 1,000, 5,000, and 10,000 source files (100, 500, and 1,000 HTML pages); Git-history fixtures cover 500 and 1,000 HTML pages with 51 commits. These measurements inform whether incremental indexing is needed; do not add it until the measured build cost warrants the complexity.
 
 Use one repository source per site for this milestone. Registry enforcement, mount ownership, multi-repository merging, and provider publishing are deferred until the static index contract is validated.
 

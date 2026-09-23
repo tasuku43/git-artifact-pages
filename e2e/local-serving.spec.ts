@@ -93,10 +93,8 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   await detailsButton.click()
   const details = page.getByRole('complementary', { name: 'Details' })
   await expect(details).toBeVisible()
-  await expect(details.getByRole('link', { name: '@maya-chen on GitHub' })).toHaveAttribute(
-    'href',
-    'https://github.com/maya-chen',
-  )
+  await expect(details.getByText('Last committed by')).toBeVisible()
+  await expect(details.getByText('Maya Chen', { exact: true })).toBeVisible()
   await expect(details.getByRole('link', { name: /example\/payments/ })).toHaveAttribute(
     'href',
     'https://github.com/example/payments',

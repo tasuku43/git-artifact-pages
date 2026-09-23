@@ -179,6 +179,16 @@ The exact schema will mature with implementation. The important public contract 
 
 The initial builder indexes `.html` and `.htm` documents as individual artifacts. A document named `index.html` or `index.htm` uses its containing directory as its logical route; other HTML filenames use their basename without the extension. `filename` and `artifactUrl` retain the actual source filename. Two documents that resolve to the same logical route are rejected rather than silently shadowing one another.
 
+### Publishable source directory
+
+The builder's `sourcePath` is the exact static content tree intended to be served beneath `/_artifacts/<site>/`. It may contain directly authored static files or output from another site generator, but HTML must already be ready for a browser: this builder does not expand templates, run site generators, bundle CSS or JavaScript, rewrite resource URLs, or copy files.
+
+The builder recursively indexes every `.html` and `.htm` file under that tree, except a root-level `index.html` or `index.htm`, which is treated as site-level content and omitted from the artifact index. Nested `index.html` and `index.htm` files are indexed at their containing-directory route. No directory-name or dotfile heuristic excludes pages; for example, HTML under `_includes/` is indexed if that directory is inside `sourcePath`. Select a publishable root that contains the pages to expose and excludes source-only templates or partials.
+
+All resources needed by those pages must also be present under `sourcePath`, with their relative directory structure intact. The index builder leaves the tree unchanged and emits metadata only; a later publish step is responsible for copying the tree unchanged beneath the site's artifact namespace. External origins and other sites remain disallowed by the artifact resource policy described below.
+
+`sourcePath` must be inside the current Git working tree. Tracked source files provide commit-based `updatedAt` and `lastCommitter` metadata. Files without Git history, including ignored or generated output, remain indexable; for them `updatedAt` falls back to filesystem modification times and `lastCommitter` is omitted. Prefer tracked, publishable HTML when Git-derived details are required.
+
 The index should eventually contain enough information to support:
 
 - recent artifacts

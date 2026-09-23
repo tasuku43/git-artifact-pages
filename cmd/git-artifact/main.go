@@ -43,7 +43,7 @@ func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	flags.Usage = func() { writeBuildUsage(stderr) }
 	siteID := flags.String("site", "", "site identifier (for example: sre)")
 	siteTitle := flags.String("site-title", "", "display title for the site (defaults to the site identifier)")
-	sourceDir := flags.String("source", "", "artifact source directory inside the current Git repository")
+	sourceDir := flags.String("source", "", "publishable static content directory inside the current Git working tree")
 	outputDir := flags.String("out", ".local/storage", "projection output directory; only _indexes/<site>.json is written")
 	repository := flags.String("repository", "", "source repository name, such as owner/repository (inferred from origin when possible)")
 	repositoryURL := flags.String("repository-url", "", "canonical source repository URL (inferred from origin when possible)")
@@ -104,7 +104,7 @@ func writeIndexUsage(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage:")
 	fmt.Fprintln(writer, "  git artifact index build [options]")
 	fmt.Fprintln(writer, "")
-	fmt.Fprintln(writer, "Build a site index from HTML documents in the source tree.")
+	fmt.Fprintln(writer, "Build a site index from ready-to-serve HTML documents in a static content tree.")
 }
 
 func writeBuildUsage(writer io.Writer) {
@@ -113,7 +113,7 @@ func writeBuildUsage(writer io.Writer) {
 	fmt.Fprintln(writer, "Options:")
 	fmt.Fprintln(writer, "  --site ID              required site identifier")
 	fmt.Fprintln(writer, "  --site-title TITLE     site display title")
-	fmt.Fprintln(writer, "  --source DIR           required source directory, relative to the current directory")
+	fmt.Fprintln(writer, "  --source DIR           publishable static content directory (relative to the current directory)")
 	fmt.Fprintln(writer, "  --out DIR              output root (default .local/storage)")
 	fmt.Fprintln(writer, "  --repository NAME      override repository name inferred from origin")
 	fmt.Fprintln(writer, "  --repository-url URL   override repository URL inferred from origin")
