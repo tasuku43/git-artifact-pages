@@ -3,157 +3,200 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Index metadata concepts · Git Artifact Pages</title>
+    <title>Optional artifact details panel · Git Artifact Pages</title>
     <style>
       :root {
         color-scheme: light;
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        color: #24272b;
+        color: #262a2f;
         background: #f5f6f7;
         font-synthesis: none;
       }
 
       * { box-sizing: border-box; }
       body { margin: 0; }
-      main { width: min(1120px, calc(100% - 48px)); margin: 54px auto 80px; }
-      h1 { margin: 0; font-size: 30px; font-weight: 620; letter-spacing: -.04em; }
-      .intro { max-width: 690px; margin: 10px 0 34px; color: #646a72; font-size: 14px; line-height: 1.65; }
-      .concepts { display: grid; gap: 22px; }
-      .concept { overflow: hidden; border: 1px solid #dfe2e5; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px #17202a08; }
-      .concept-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 20px 22px 16px; }
-      .concept-heading h2 { margin: 0; font-size: 16px; font-weight: 620; }
-      .concept-heading p { margin: 5px 0 0; color: #697078; font-size: 12px; line-height: 1.5; }
-      .tag { flex: none; padding: 4px 8px; border-radius: 999px; background: #f0f1f2; color: #646a72; font-size: 10px; }
-      .workspace { margin: 0 16px 16px; overflow: hidden; border: 1px solid #e0e2e4; border-radius: 9px; background: #fff; }
-      .toolbar { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px; border-bottom: 1px solid #e7e9eb; color: #737a82; font-size: 11px; }
-      .crumbs { overflow: hidden; color: #5f6670; white-space: nowrap; text-overflow: ellipsis; }
-      .crumbs strong { color: #292d32; font-weight: 520; }
-      .crumbs span { padding: 0 7px; color: #a2a7ad; }
-      .actions { display: flex; flex: none; align-items: center; gap: 14px; }
-      .action { color: #656c74; }
-      .meta { display: flex; min-width: 0; align-items: center; gap: 9px; color: #727980; font-size: 11px; white-space: nowrap; }
-      .meta-sep { color: #c3c7cb; }
-      a { color: #315f92; text-decoration: none; }
-      a:hover { text-decoration: underline; }
-      .author { color: #434b54; font-weight: 530; }
-      .mini-avatar { display: inline-grid; width: 19px; height: 19px; place-items: center; margin-right: 5px; border-radius: 50%; background: #e8edf2; color: #475665; font-size: 9px; vertical-align: middle; }
-      .document { min-height: 190px; padding: 28px clamp(22px, 6vw, 68px) 38px; }
-      .document h3 { margin: 0 0 12px; color: #272a2e; font-size: 23px; font-weight: 620; letter-spacing: -.035em; }
-      .document p { max-width: 620px; margin: 0; color: #555d65; font-size: 13px; line-height: 1.7; }
-      .context-row { display: flex; min-height: 43px; align-items: center; justify-content: space-between; gap: 16px; padding: 0 18px; border-bottom: 1px solid #eceef0; background: #fbfbfc; }
-      .context-row .meta { overflow: hidden; }
-      .source-button { flex: none; color: #46515d; font-size: 11px; }
-      .details { position: relative; }
-      .details summary { display: flex; min-height: 43px; align-items: center; justify-content: flex-end; gap: 10px; padding: 0 15px; border-bottom: 1px solid #eceef0; color: #747b82; font-size: 11px; cursor: pointer; list-style: none; }
-      .details summary::-webkit-details-marker { display: none; }
-      .details summary::after { content: "⌄"; color: #777f87; font-size: 13px; }
-      .details[open] summary::after { content: "⌃"; }
-      .details-body { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 16px; padding: 14px 18px 16px; border-bottom: 1px solid #eceef0; background: #fbfbfc; font-size: 11px; }
-      .details-label { color: #858c93; }
-      .details-value { min-width: 0; color: #444b52; overflow-wrap: anywhere; }
-      .note { padding: 0 22px 19px; color: #737a82; font-size: 11px; line-height: 1.55; }
+      main { width: min(1080px, calc(100% - 40px)); margin: 42px auto 72px; }
+      h1 { margin: 0; font-size: 29px; font-weight: 620; letter-spacing: -.04em; }
+      .intro { max-width: 720px; margin: 9px 0 25px; color: #697078; font-size: 13px; line-height: 1.65; }
+      .rule { margin: 0 0 22px; padding: 11px 14px; border: 1px solid #dfe2e5; border-radius: 8px; background: #fff; color: #555d65; font-size: 11px; line-height: 1.6; }
+      .concepts { display: grid; gap: 20px; }
+      .concept { overflow: hidden; border: 1px solid #dfe2e5; border-radius: 11px; background: #fff; box-shadow: 0 2px 8px #17202a08; }
+      .concept-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 17px 20px 14px; }
+      .concept-heading h2 { margin: 0; font-size: 15px; font-weight: 620; }
+      .concept-heading p { margin: 5px 0 0; color: #697078; font-size: 11px; line-height: 1.5; }
+      .tag { flex: none; padding: 4px 8px; border-radius: 999px; background: #f0f1f2; color: #636a71; font-size: 10px; }
+      .workspace { position: relative; min-height: 280px; margin: 0 14px 14px; overflow: hidden; border: 1px solid #e0e2e4; border-radius: 8px; background: #fff; }
+      .toolbar { position: relative; z-index: 1; display: flex; min-height: 42px; align-items: center; gap: 14px; padding: 0 11px; border-bottom: 1px solid #e7e9eb; background: #fff; }
+      .crumbs { min-width: 0; flex: 1; overflow: hidden; color: #747b82; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
+      .crumbs strong { color: #30353a; font-weight: 500; }
+      .crumbs span { padding: 0 5px; color: #a4a9ae; }
+      .toolbar-actions { display: flex; flex: none; align-items: center; gap: 3px; }
+      .context-button { display: inline-flex; min-height: 28px; align-items: center; gap: 6px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: #697078; font: inherit; font-size: 10px; cursor: pointer; }
+      .context-button:hover, .context-button[aria-pressed="true"] { background: #f0f1f2; color: #262a2f; }
+      .context-icon { display: inline-grid; width: 13px; height: 13px; place-items: center; color: #737b83; font-size: 12px; line-height: 1; }
+      .document { padding: 32px clamp(22px, 6vw, 64px) 38px; }
+      .document h3 { margin: 0 0 11px; color: #262a2f; font-size: 22px; font-weight: 620; letter-spacing: -.035em; }
+      .document p { max-width: 550px; margin: 0; color: #596169; font-size: 12px; line-height: 1.7; }
+      .side-panel { position: absolute; z-index: 2; top: 51px; right: 10px; display: flex; width: min(258px, calc(100% - 20px)); min-height: 194px; max-height: calc(100% - 61px); flex-direction: column; overflow: auto; border: 1px solid #e3e5e7; border-radius: 10px; background: rgb(255 255 255 / 94%); box-shadow: 0 8px 28px #20283020; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+      .side-panel[hidden] { display: none; }
+      .panel-heading { display: flex; min-height: 38px; align-items: center; justify-content: space-between; gap: 10px; padding: 0 12px; border-bottom: 1px solid #e9ebed; color: #616970; font-size: 10px; }
+      .panel-close { border: 0; background: transparent; color: #777f86; font-size: 15px; cursor: pointer; }
+      .contents-view { padding: 6px; }
+      .contents-view[hidden], .details-view[hidden] { display: none; }
+      .toc-item { display: block; width: 100%; padding: 7px 8px; border: 0; border-radius: 5px; background: transparent; color: #505860; text-align: left; font: inherit; font-size: 11px; }
+      .toc-item:hover { background: #f0f1f2; }
+      .toc-item.sub { padding-left: 21px; color: #727980; }
+      .details-view { padding: 12px; color: #454c53; font-size: 11px; }
+      .details-view a { color: #315f92; text-decoration: none; }
+      .details-view a:hover { text-decoration: underline; }
+      .meta-list { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 12px 8px; align-items: start; }
+      .label { color: #858c93; font-size: 10px; }
+      .value { min-width: 0; overflow-wrap: anywhere; line-height: 1.45; }
+      .avatar { display: inline-grid; width: 23px; height: 23px; place-items: center; margin-right: 6px; border-radius: 50%; background: #e8edf2; color: #475665; font-size: 10px; vertical-align: middle; }
+      .author-link { color: #3c4650 !important; font-weight: 560; }
+      .repo-link { display: flex; align-items: center; gap: 7px; color: #3c4650 !important; }
+      .repo-mark { display: inline-grid; width: 22px; height: 22px; flex: none; place-items: center; border: 1px solid #e2e5e7; border-radius: 5px; color: #69727a; font-size: 11px; }
+      .repo-card { display: block; margin-bottom: 13px; padding: 10px; border: 1px solid #e6e8ea; border-radius: 7px; background: #fafbfb; }
+      .repo-card .repo-name { display: block; color: #315f92; font-size: 11px; font-weight: 560; line-height: 1.4; }
+      .repo-card .repo-caption { display: block; margin-top: 4px; color: #858c93; font-size: 9px; }
+      .profile { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; }
+      .profile .avatar { width: 34px; height: 34px; margin: 0; font-size: 12px; }
+      .profile-name { color: #333a41; font-size: 12px; font-weight: 570; }
+      .profile-caption { margin-top: 3px; color: #858c93; font-size: 9px; }
+      .divider { height: 1px; margin: 12px 0; background: #e9ebed; }
+      .source-first { display: flex; flex-direction: column; gap: 11px; }
+      .source-row { display: flex; align-items: center; gap: 8px; }
+      .source-row .label { min-width: 62px; }
+      .footnote { padding: 0 20px 16px; color: #737a82; font-size: 10px; line-height: 1.55; }
 
-      @media (max-width: 700px) {
-        main { width: min(100% - 24px, 1120px); margin-top: 30px; }
-        .concept-heading { padding: 16px; }
-        .workspace { margin: 0 9px 9px; }
-        .toolbar { flex-wrap: wrap; padding: 10px 12px; }
-        .toolbar .meta { order: 3; width: 100%; }
-        .context-row { align-items: flex-start; flex-direction: column; justify-content: center; gap: 7px; padding: 10px 14px; }
-        .details summary { justify-content: flex-start; }
+      @media (max-width: 680px) {
+        main { width: calc(100% - 20px); margin-top: 26px; }
+        .concept-heading { padding: 14px; }
+        .workspace { margin: 0 8px 8px; }
+        .toolbar { flex-wrap: wrap; gap: 3px; padding: 6px 8px; }
+        .crumbs { width: 100%; flex: auto; }
+        .toolbar-actions { margin-left: auto; }
+        .side-panel { top: 72px; right: 7px; }
       }
     </style>
   </head>
   <body>
     <main>
-      <h1>Artifact attribution and source</h1>
-      <p class="intro">The index is the browser's complete metadata budget. These concepts explore how an artifact can show its last update, author, and source repository without taking over the artifact's own page.</p>
+      <h1>Optional artifact details panel</h1>
+      <p class="intro">Each option uses the same interaction as Contents: press a toolbar button to open the right-side panel, press the active button again to close it, or choose the other button to switch the panel's contents. The panel floats over the artifact view and does not resize it.</p>
+      <p class="rule"><strong>Shared behavior:</strong> Contents and Details are two views in one optional panel slot. No metadata row is added to the artifact header, and the document viewport keeps its full width.</p>
 
       <div class="concepts">
         <section class="concept" aria-labelledby="concept-a">
           <div class="concept-heading">
-            <div>
-              <h2 id="concept-a">A · Inline context</h2>
-              <p>Keep all provenance visible in the existing workspace bar.</p>
-            </div>
-            <span class="tag">Most compact</span>
+            <div><h2 id="concept-a">A · Quiet metadata list</h2><p>Keep author, update date, and source as equal-weight facts.</p></div>
+            <span class="tag">Balanced</span>
           </div>
-          <div class="workspace">
-            <div class="toolbar">
+          <div class="workspace" data-panel-demo>
+            <header class="toolbar">
               <div class="crumbs">incidents <span>/</span> checkout <span>/</span> <strong>latency-review</strong></div>
-              <div class="meta">
-                <time datetime="2026-09-22">Updated Sep 22</time><span class="meta-sep">·</span>
-                <a class="author" href="https://github.com/maya-chen"><span class="mini-avatar">M</span>@maya-chen</a><span class="meta-sep">·</span>
-                <a href="https://github.com/acme/sre-artifacts">acme/sre-artifacts ↗</a>
+              <div class="toolbar-actions">
+                <button class="context-button" type="button" data-view-button="contents" aria-pressed="false"><span class="context-icon">≡</span>Contents</button>
+                <button class="context-button" type="button" data-view-button="details" aria-pressed="true"><span class="context-icon">ⓘ</span>Details</button>
               </div>
-              <div class="actions"><span class="action">Contents</span><span class="action">Copy link</span></div>
-            </div>
-            <article class="document">
-              <h3>Checkout latency review</h3>
-              <p>The artifact stays in its own document surface. Attribution and provenance remain available in the application chrome.</p>
-            </article>
+            </header>
+            <article class="document"><h3>Checkout latency review</h3><p>The published artifact remains a normal document. Its optional context stays in the application layer, separate from the artifact's own HTML.</p></article>
+            <aside class="side-panel" aria-label="Artifact details">
+              <div class="panel-heading"><span data-panel-title>Details</span><button class="panel-close" type="button" data-close aria-label="Close panel">×</button></div>
+              <nav class="contents-view" data-panel-view="contents" aria-label="Artifact contents" hidden><button class="toc-item">Summary</button><button class="toc-item sub">Root cause</button><button class="toc-item sub">Follow-up</button></nav>
+              <div class="details-view" data-panel-view="details">
+                <div class="meta-list">
+                  <span class="label">Updated</span><time class="value" datetime="2026-09-22">Sep 22, 2026</time>
+                  <span class="label">Author</span><span class="value"><a class="author-link" href="https://github.com/maya-chen" target="_blank" rel="noreferrer"><span class="avatar">M</span>@maya-chen ↗</a></span>
+                  <span class="label">Source</span><span class="value"><a class="repo-link" href="https://github.com/acme/sre-artifacts" target="_blank" rel="noreferrer"><span class="repo-mark">⌂</span>acme/sre-artifacts ↗</a></span>
+                </div>
+              </div>
+            </aside>
           </div>
-          <p class="note">Trade-off: the current bar is already narrow and also owns breadcrumbs and actions; long author names or repository paths can crowd it.</p>
+          <p class="footnote">Trade-off: restrained and scannable; the source link is clear but does not dominate the panel.</p>
         </section>
 
         <section class="concept" aria-labelledby="concept-b">
           <div class="concept-heading">
-            <div>
-              <h2 id="concept-b">B · A dedicated context row</h2>
-              <p>Give publication metadata its own quiet line above the embedded document.</p>
-            </div>
-            <span class="tag">Clear hierarchy</span>
+            <div><h2 id="concept-b">B · Author-forward</h2><p>Make attribution the first thing visible, then treat date and repository as supporting provenance.</p></div>
+            <span class="tag">People first</span>
           </div>
-          <div class="workspace">
-            <div class="toolbar">
+          <div class="workspace" data-panel-demo>
+            <header class="toolbar">
               <div class="crumbs">incidents <span>/</span> checkout <span>/</span> <strong>latency-review</strong></div>
-              <div class="actions"><span class="action">Contents</span><span class="action">Copy link</span></div>
-            </div>
-            <div class="context-row">
-              <div class="meta">
-                <time datetime="2026-09-22">Updated Sep 22, 2026</time><span class="meta-sep">·</span>
-                <span>by <a class="author" href="https://github.com/maya-chen">@maya-chen</a></span>
+              <div class="toolbar-actions">
+                <button class="context-button" type="button" data-view-button="contents" aria-pressed="false"><span class="context-icon">≡</span>Contents</button>
+                <button class="context-button" type="button" data-view-button="details" aria-pressed="true"><span class="context-icon">ⓘ</span>Details</button>
               </div>
-              <a class="source-button" href="https://github.com/acme/sre-artifacts">View source · acme/sre-artifacts ↗</a>
-            </div>
-            <article class="document">
-              <h3>Checkout latency review</h3>
-              <p>The artifact remains visually independent. Its publication context is easy to scan without mixing it into the artifact's own content.</p>
-            </article>
+            </header>
+            <article class="document"><h3>Checkout latency review</h3><p>The published artifact remains a normal document. Its optional context stays in the application layer, separate from the artifact's own HTML.</p></article>
+            <aside class="side-panel" aria-label="Artifact details">
+              <div class="panel-heading"><span data-panel-title>About this artifact</span><button class="panel-close" type="button" data-close aria-label="Close panel">×</button></div>
+              <nav class="contents-view" data-panel-view="contents" aria-label="Artifact contents" hidden><button class="toc-item">Summary</button><button class="toc-item sub">Root cause</button><button class="toc-item sub">Follow-up</button></nav>
+              <div class="details-view" data-panel-view="details">
+                <div class="profile"><span class="avatar">M</span><div><div class="profile-name"><a class="author-link" href="https://github.com/maya-chen" target="_blank" rel="noreferrer">@maya-chen ↗</a></div><div class="profile-caption">Author</div></div></div>
+                <div class="meta-list">
+                  <span class="label">Updated</span><time class="value" datetime="2026-09-22">Sep 22, 2026</time>
+                  <span class="label">Source</span><span class="value"><a class="repo-link" href="https://github.com/acme/sre-artifacts" target="_blank" rel="noreferrer"><span class="repo-mark">⌂</span>acme/sre-artifacts ↗</a></span>
+                </div>
+              </div>
+            </aside>
           </div>
-          <p class="note">Trade-off: adds a little vertical chrome, but supports longer metadata and keeps source navigation explicit.</p>
+          <p class="footnote">Trade-off: human ownership is immediately recognizable; it gives the author more visual weight than the other metadata.</p>
         </section>
 
         <section class="concept" aria-labelledby="concept-c">
           <div class="concept-heading">
-            <div>
-              <h2 id="concept-c">C · Details on demand</h2>
-              <p>Show the update at a glance; group author and source in a disclosure.</p>
-            </div>
-            <span class="tag">Quietest chrome</span>
+            <div><h2 id="concept-c">C · Source-forward</h2><p>Make the repository the primary action; keep author and update as compact supporting facts.</p></div>
+            <span class="tag">Provenance first</span>
           </div>
-          <div class="workspace">
-            <div class="toolbar">
+          <div class="workspace" data-panel-demo>
+            <header class="toolbar">
               <div class="crumbs">incidents <span>/</span> checkout <span>/</span> <strong>latency-review</strong></div>
-              <div class="meta"><time datetime="2026-09-22">Updated Sep 22</time></div>
-              <div class="actions"><span class="action">Contents</span><span class="action">Copy link</span></div>
-            </div>
-            <details class="details">
-              <summary>Artifact details</summary>
-              <div class="details-body">
-                <span class="details-label">Author</span><span class="details-value"><a href="https://github.com/maya-chen">@maya-chen ↗</a></span>
-                <span class="details-label">Source</span><span class="details-value"><a href="https://github.com/acme/sre-artifacts">github.com/acme/sre-artifacts ↗</a></span>
-                <span class="details-label">Updated</span><span class="details-value">Sep 22, 2026</span>
+              <div class="toolbar-actions">
+                <button class="context-button" type="button" data-view-button="contents" aria-pressed="false"><span class="context-icon">≡</span>Contents</button>
+                <button class="context-button" type="button" data-view-button="details" aria-pressed="true"><span class="context-icon">ⓘ</span>Details</button>
               </div>
-            </details>
-            <article class="document">
-              <h3>Checkout latency review</h3>
-              <p>The application header stays minimal. The complete provenance is still available with one deliberate action.</p>
-            </article>
+            </header>
+            <article class="document"><h3>Checkout latency review</h3><p>The published artifact remains a normal document. Its optional context stays in the application layer, separate from the artifact's own HTML.</p></article>
+            <aside class="side-panel" aria-label="Artifact details">
+              <div class="panel-heading"><span data-panel-title>Source and attribution</span><button class="panel-close" type="button" data-close aria-label="Close panel">×</button></div>
+              <nav class="contents-view" data-panel-view="contents" aria-label="Artifact contents" hidden><button class="toc-item">Summary</button><button class="toc-item sub">Root cause</button><button class="toc-item sub">Follow-up</button></nav>
+              <div class="details-view" data-panel-view="details">
+                <a class="repo-card" href="https://github.com/acme/sre-artifacts" target="_blank" rel="noreferrer"><span class="repo-name">acme/sre-artifacts ↗</span><span class="repo-caption">Source repository</span></a>
+                <div class="source-first">
+                  <div class="source-row"><span class="label">Author</span><span class="value"><a class="author-link" href="https://github.com/maya-chen" target="_blank" rel="noreferrer"><span class="avatar">M</span>@maya-chen ↗</a></span></div>
+                  <div class="source-row"><span class="label">Updated</span><time class="value" datetime="2026-09-22">Sep 22, 2026</time></div>
+                </div>
+              </div>
+            </aside>
           </div>
-          <p class="note">Trade-off: avoids persistent density, but the author and repository link are less discoverable and require an extra action.</p>
+          <p class="footnote">Trade-off: the repo destination is easiest to spot and click; this is strongest when following the source is the main job.</p>
         </section>
       </div>
     </main>
+    <script>
+      document.querySelectorAll('[data-panel-demo]').forEach((demo) => {
+        const panel = demo.querySelector('.side-panel')
+        const title = demo.querySelector('[data-panel-title]')
+        const views = [...demo.querySelectorAll('[data-panel-view]')]
+        const buttons = [...demo.querySelectorAll('[data-view-button]')]
+        const names = { contents: 'Contents', details: title.textContent }
+        let activeView = 'details'
+
+        const show = (view) => {
+          activeView = view
+          panel.hidden = view === null
+          buttons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.viewButton === view)))
+          views.forEach((content) => { content.hidden = content.dataset.panelView !== view })
+          if (view) title.textContent = names[view]
+        }
+
+        buttons.forEach((button) => button.addEventListener('click', () => {
+          show(activeView === button.dataset.viewButton ? null : button.dataset.viewButton)
+        }))
+        demo.querySelector('[data-close]').addEventListener('click', () => show(null))
+      })
+    </script>
   </body>
 </html>
