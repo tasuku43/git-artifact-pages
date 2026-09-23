@@ -42,42 +42,13 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   await expect(artifact.locator('body')).toHaveCSS('color', 'rgb(31, 41, 55)')
   const sreCsp = (await sreDocumentResponse).headers()['content-security-policy']
   expect(sreCsp).toContain('/_artifacts/sre/')
+  expect(sreCsp).toContain('https:')
   expect(sreCsp).not.toContain("'self'")
-  expect(sreCsp).not.toContain('/_artifacts/frontend/')
   expect((await Promise.all(sreAssetResponses)).every((response) => response.status() === 200)).toBeTruthy()
   expect(artifactResponsePaths.length).toBeGreaterThanOrEqual(sreAssetPaths.length)
   expect(artifactResponsePaths.every((path) => path.startsWith('/_artifacts/sre/'))).toBeTruthy()
   await expect(page.locator('body')).toHaveCSS('color', 'rgb(17, 20, 22)')
 
-  const crossSiteFetch = await artifact.locator('body').evaluate(async () => {
-    try {
-      const response = await fetch('/_artifacts/frontend/design-system/button-guidelines/assets/data/details.json')
-      return response.status
-    } catch {
-      return 'blocked'
-    }
-  })
-  expect(crossSiteFetch).toBe('blocked')
-
-  const crossSiteStylesheet = await artifact.locator('body').evaluate((body) => new Promise<string>((resolve) => {
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = '/_artifacts/frontend/design-system/button-guidelines/assets/css/styles.css'
-    link.onload = () => resolve('loaded')
-    link.onerror = () => resolve('blocked')
-    body.ownerDocument.head.append(link)
-  }))
-  expect(crossSiteStylesheet).toBe('blocked')
-
-  const crossSiteScript = await artifact.locator('body').evaluate((body) => new Promise<string>((resolve) => {
-    const script = document.createElement('script')
-    script.type = 'module'
-    script.src = '/_artifacts/frontend/design-system/button-guidelines/assets/js/main.js'
-    script.onload = () => resolve('loaded')
-    script.onerror = () => resolve('blocked')
-    body.ownerDocument.head.append(script)
-  }))
-  expect(crossSiteScript).toBe('blocked')
   await expect(artifact.locator('body')).toHaveAttribute('data-artifact-site', 'sre')
   expect(artifactResponsePaths.every((path) => path.startsWith('/_artifacts/sre/'))).toBeTruthy()
 
@@ -142,33 +113,99 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   await expect(frontend.locator('body')).toHaveCSS('color', 'rgb(76, 29, 149)')
   const frontendCsp = (await frontendDocumentResponse).headers()['content-security-policy']
   expect(frontendCsp).toContain('/_artifacts/frontend/')
+  expect(frontendCsp).toContain('https:')
   expect(frontendCsp).not.toContain("'self'")
-  expect(frontendCsp).not.toContain('/_artifacts/sre/')
   expect((await Promise.all(frontendAssetResponses)).every((response) => response.status() === 200)).toBeTruthy()
   expect(frontendResponsePaths.length).toBeGreaterThanOrEqual(frontendAssetPaths.length)
   expect(frontendResponsePaths.every((path) => path.startsWith('/_artifacts/frontend/'))).toBeTruthy()
   await expect(frontendPage.locator('body')).toHaveCSS('color', 'rgb(17, 20, 22)')
 
-  let externalRequestReachedServer = false
+  const externalResourcePaths = new Set<string>()
   await frontendPage.route('https://example.invalid/**', async (route) => {
-    externalRequestReachedServer = true
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: { 'access-control-allow-origin': '*' },
-      body: '{}',
-    })
+    const pathname = new URL(route.request().url()).pathname
+    externalResourcePaths.add(pathname)
+    if (pathname === '/data.json') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        headers: { 'access-control-allow-origin': '*' },
+        body: '{}',
+      })
+    } else if (pathname === '/styles.css') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/css',
+        body: 'body { --external-stylesheet-loaded: yes; }',
+      })
+    } else if (pathname === '/probe.js') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/javascript',
+        body: 'document.body.dataset.externalScript = "loaded";',
+      })
+    } else if (pathname === '/pixel.svg') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>',
+      })
+    } else {
+      await route.fulfill({ status: 404 })
+    }
   })
   const externalFetch = await frontend.locator('body').evaluate(async () => {
     try {
-      await fetch('https://example.invalid/data.json')
+      const response = await fetch('https://example.invalid/data.json')
+      return response.status
+    } catch {
+      return 0
+    }
+  })
+  expect(externalFetch).toBe(200)
+  const externalStylesheet = await frontend.locator('body').evaluate((body) => new Promise<string>((resolve) => {
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = 'https://example.invalid/styles.css'
+    link.onload = () => resolve('loaded')
+    link.onerror = () => resolve('blocked')
+    body.ownerDocument.head.append(link)
+  }))
+  expect(externalStylesheet).toBe('loaded')
+  expect(await frontend.locator('body').evaluate((body) => getComputedStyle(body).getPropertyValue('--external-stylesheet-loaded').trim())).toBe('yes')
+  const externalImageWidth = await frontend.locator('body').evaluate((body) => new Promise<number | string>((resolve) => {
+    const image = new Image()
+    image.onload = () => resolve(image.naturalWidth)
+    image.onerror = () => resolve('blocked')
+    image.src = 'https://example.invalid/pixel.svg'
+    body.append(image)
+  }))
+  expect(externalImageWidth).toBe(1)
+  const externalScript = await frontend.locator('body').evaluate((body) => new Promise<string>((resolve) => {
+    const script = document.createElement('script')
+    script.src = 'https://example.invalid/probe.js'
+    script.onload = () => resolve('loaded')
+    script.onerror = () => resolve('blocked')
+    body.ownerDocument.head.append(script)
+  }))
+  expect(externalScript).toBe('loaded')
+  await expect(frontend.locator('body')).toHaveAttribute('data-external-script', 'loaded')
+  expect([...externalResourcePaths].sort()).toEqual(['/data.json', '/pixel.svg', '/probe.js', '/styles.css'])
+
+  let insecureRequestReachedServer = false
+  await frontendPage.route('http://example.invalid/**', async (route) => {
+    insecureRequestReachedServer = true
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+  })
+  const insecureFetch = await frontend.locator('body').evaluate(async () => {
+    try {
+      await fetch('http://example.invalid/data.json')
       return 'loaded'
     } catch {
       return 'blocked'
     }
   })
-  expect(externalFetch).toBe('blocked')
-  expect(externalRequestReachedServer).toBeFalsy()
+  expect(insecureFetch).toBe('blocked')
+  expect(insecureRequestReachedServer).toBeFalsy()
 
   const missingAsset = await frontendPage.request.get('/_artifacts/frontend/design-system/button-guidelines/assets/data/missing.json')
   expect(missingAsset.status()).toBe(404)

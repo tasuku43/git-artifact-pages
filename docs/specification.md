@@ -185,7 +185,7 @@ The builder's `sourcePath` is the exact static content tree intended to be serve
 
 The builder recursively indexes every `.html` and `.htm` file under that tree, except a root-level `index.html` or `index.htm`, which is treated as site-level content and omitted from the artifact index. Nested `index.html` and `index.htm` files are indexed at their containing-directory route. No directory-name or dotfile heuristic excludes pages; for example, HTML under `_includes/` is indexed if that directory is inside `sourcePath`. Select a publishable root that contains the pages to expose and excludes source-only templates or partials.
 
-All resources needed by those pages must also be present under `sourcePath`, with their relative directory structure intact. The index builder leaves the tree unchanged and emits metadata only; a later publish step is responsible for copying the tree unchanged beneath the site's artifact namespace. External origins and other sites remain disallowed by the artifact resource policy described below.
+Local resources referenced by those pages must also be present under `sourcePath`, with their relative directory structure intact. External resources may be referenced over HTTPS under the artifact resource policy described below. The index builder leaves the tree unchanged and emits metadata only; a later publish step is responsible for copying the tree unchanged beneath the site's artifact namespace.
 
 `sourcePath` must be inside the current Git working tree. Tracked source files provide commit-based `updatedAt` and `lastCommitter` metadata. Files without Git history, including ignored or generated output, remain indexable; for them `updatedAt` falls back to filesystem modification times and `lastCommitter` is omitted. Prefer tracked, publishable HTML when Git-derived details are required.
 
@@ -240,11 +240,13 @@ Reasons:
 
 The iframe intentionally has no `sandbox` attribute. Publishing an artifact is the trust boundary: published HTML is treated as approved executable content and can use normal browser capabilities.
 
-The hosting layer sends an enforced Content Security Policy that limits artifact resource loads to the current logical site's `/_artifacts/<site>/` path; local nginx demonstrates this contract. Inline scripts, styles, and eval remain allowed because published artifacts are trusted, but network resources must stay under that site prefix. Do not use `'self'` as the only source: all logical sites share one origin. External origins and other logical sites are blocked by default; additional sources should be added only when a published use case requires them.
+The hosting layer sends an enforced Content Security Policy that allows resources from the current logical site's `/_artifacts/<site>/` path and from HTTPS origins. This lets ordinary browser-rendered HTML load remote CSS, JavaScript, images, fonts, media, and fetch/XHR resources when the browser's normal TLS, CORS, and mixed-content rules permit them. Insecure external HTTP resources remain blocked. Inline scripts, styles, and eval remain allowed because published artifacts are trusted.
 
-CSP path matching does not constrain a same-origin redirect target. Artifact resources should therefore be served directly without redirects across site prefixes; any future hosting adapter must preserve both the policy and that serving behavior.
+The `https:` source is intentionally broad: it matches resources from any HTTPS origin, including other logical-site paths on the application's own HTTPS origin. Therefore the path source is not a cross-site isolation boundary when the application is served over HTTPS. Do not use `'self'` as a replacement; all logical sites share one origin. This behavior is acceptable only under the current trust model, where publishing an artifact means approving its active content and network requests. Browsers may disclose ordinary request metadata to remote resource hosts.
 
-Artifacts are served from the same origin as the SPA under `/_artifacts/*`. The path-scoped policy limits resource loads initiated by the artifact document, but it is not a security boundary: an artifact script can still access the parent application and other same-origin resources. This product trusts published artifacts rather than isolating hostile publishers. If private or authenticated content, or mutually untrusted publishers, become part of the product, artifact hosting must move to a separate origin and the security model must be revisited before that use case is supported.
+The policy does not confine redirects to an artifact path: an allowed HTTPS resource may redirect to another HTTPS URL. Any future hosting adapter must preserve the HTTPS-resource behavior and the same trusted-publisher assumption. If mutually untrusted publishers or private artifacts need isolation, use a per-site HTTPS-origin allowlist or a separate origin before supporting that use case.
+
+Artifacts are served from the same origin as the SPA under `/_artifacts/*`. The policy does not isolate artifacts: an artifact script can access the parent application and other same-origin resources, and the broad HTTPS source permits same-origin HTTPS requests outside its site prefix. This product trusts published artifacts rather than isolating hostile publishers. If private or authenticated content, or mutually untrusted publishers, become part of the product, artifact hosting must move to a separate origin and the security model must be revisited before that use case is supported.
 
 The right-hand table of contents should use precomputed index metadata rather than requiring the parent application to inspect the iframe DOM.
 
@@ -454,8 +456,8 @@ Important E2E flows include:
 - sidebar filter → artifact selection
 - deep-link directly to an artifact
 - reload preserves route
-- iframe loads nested relative artifact assets, modules, and data without crossing site prefixes
-- CSP blocks requests to another logical site's artifact paths and external origins by default
+- iframe loads nested relative artifact assets, modules, and data from the artifact's site namespace
+- CSP permits external HTTPS resources and blocks external HTTP resource fetches
 - missing artifact resources return 404 rather than the SPA shell
 - artifact styles remain inside the iframe document
 - published scripts retain normal same-origin browser capabilities
