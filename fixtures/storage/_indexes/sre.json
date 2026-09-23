@@ -13,8 +13,12 @@
       "filename": "index.html",
       "artifactUrl": "/_artifacts/sre/incidents/checkout-latency/index.html",
       "updatedAt": "2026-09-22T00:00:00Z",
+      "authors": [
+        { "provider": "github", "login": "maya-chen" }
+      ],
       "source": {
         "repository": "example/payments",
+        "repositoryUrl": "https://github.com/example/payments",
         "ref": "main"
       },
       "toc": [
@@ -42,8 +46,12 @@
       "filename": "index.html",
       "artifactUrl": "/_artifacts/sre/architecture/platform-topology/index.html",
       "updatedAt": "2026-09-21T12:00:00Z",
+      "authors": [
+        { "provider": "github", "login": "platform-team" }
+      ],
       "source": {
         "repository": "example/platform",
+        "repositoryUrl": "https://github.com/example/platform",
         "ref": "main"
       },
       "toc": [

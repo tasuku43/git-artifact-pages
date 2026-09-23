@@ -8,6 +8,7 @@ import type { ArtifactIndexEntry, SiteIndex, SiteSummary } from '../domain/index
 import { artifactRouteHref, type AppRoute } from '../routing'
 
 type SiteRoute = Extract<AppRoute, { kind: 'site' }>
+type WorkspacePanel = 'contents' | 'details' | null
 
 export function ArtifactWorkspace({
   route,
@@ -40,7 +41,7 @@ export function ArtifactWorkspace({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(initialSidebarOpen)
   const sidebarOpenRef = useRef(initialSidebarOpen)
-  const [tocOpen, setTocOpen] = useState(false)
+  const [activePanel, setActivePanel] = useState<WorkspacePanel>(null)
   const [paletteSeed, setPaletteSeed] = useState<string | null>(null)
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(
     () => new Set([...folderAncestors(route.artifactPath), ...initialExpandedPaths]),
@@ -52,6 +53,12 @@ export function ArtifactWorkspace({
     ? findArtifact(index, route.artifactPath)
     : undefined
   const hasContents = Boolean(currentArtifact?.toc?.length)
+  const tocOpen = activePanel === 'contents'
+  const detailsOpen = activePanel === 'details'
+
+  const togglePanel = useCallback((panel: Exclude<WorkspacePanel, null>) => {
+    setActivePanel((current) => current === panel ? null : panel)
+  }, [])
 
   const updateExpandedPaths = useCallback((update: (current: Set<string>) => Set<string>) => {
     setExpandedPaths(update)
@@ -95,7 +102,7 @@ export function ArtifactWorkspace({
   }, [initialSidebarOpen, updateSidebarOpen])
 
   useEffect(() => {
-    setTocOpen(false)
+    setActivePanel(null)
   }, [route.artifactPath])
 
   useEffect(() => {
@@ -112,14 +119,14 @@ export function ArtifactWorkspace({
         toggleSidebar()
       } else if (modifier && event.shiftKey && key === 'o') {
         event.preventDefault()
-        setTocOpen((current) => !current)
+        togglePanel('contents')
       } else if (event.key === 'Escape') {
         setPaletteSeed(null)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [paletteSeed, closePalette, toggleSidebar])
+  }, [paletteSeed, closePalette, toggleSidebar, togglePanel])
 
   useEffect(() => {
     if (paletteSeed !== null) return
@@ -135,14 +142,14 @@ export function ArtifactWorkspace({
         toggleSidebar(true)
       } else if (modifier && event.shiftKey && key === 'o' && hasContents) {
         event.preventDefault()
-        setTocOpen((current) => !current)
-      } else if (event.key === 'Escape' && tocOpen) {
-        setTocOpen(false)
+        togglePanel('contents')
+      } else if (event.key === 'Escape' && activePanel !== null) {
+        setActivePanel(null)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [paletteSeed, hasContents, tocOpen, openPalette, toggleSidebar])
+  }, [paletteSeed, hasContents, activePanel, openPalette, toggleSidebar, togglePanel])
 
   const sites: SiteSummary[] = catalog.length
     ? catalog.map(({ site }) => site).sort((left, right) => left.title.localeCompare(right.title))
@@ -156,7 +163,7 @@ export function ArtifactWorkspace({
       title: 'Toggle contents',
       shortcut: '⌘ ⇧ O',
       available: hasContents,
-      onSelect: () => setTocOpen((current) => !current),
+      onSelect: () => togglePanel('contents'),
     },
     { title: 'Go to site home', onSelect: () => navigate(`/${encodeURIComponent(index.site.id)}`) },
     { title: 'Switch theme', onSelect: onToggleTheme },
@@ -182,7 +189,7 @@ export function ArtifactWorkspace({
 
   function openArtifact(artifact: ArtifactIndexEntry) {
     navigate(artifactRouteHref(index.site.id, artifact.path))
-    setTocOpen(false)
+    setActivePanel(null)
     setPaletteSeed(null)
     if (window.innerWidth <= 860) updateSidebarOpen(false)
   }
@@ -195,7 +202,7 @@ export function ArtifactWorkspace({
   function jumpToHeading(id: string) {
     navigate(`${pathname}#${encodeURIComponent(id)}`)
     setPaletteSeed(null)
-    setTocOpen(false)
+    setActivePanel(null)
   }
 
   const tocEntries = currentArtifact?.toc ?? []
@@ -293,27 +300,26 @@ export function ArtifactWorkspace({
               })}
             </nav>
 
-            {currentArtifact ? (
-              <div className="artifact-stamp">
-                <time dateTime={currentArtifact.updatedAt}>{formatDate(currentArtifact.updatedAt)}</time>
-                {currentArtifact.source ? (
-                  <span className="artifact-source">
-                    {currentArtifact.source.repository}<span aria-hidden="true">·</span>{currentArtifact.source.ref}
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
-
             <div className="context-actions">
               <button
                 className={`context-button${tocOpen ? ' is-active' : ''}`}
                 disabled={!currentArtifact || tocEntries.length === 0}
                 aria-pressed={tocOpen}
                 title={tocEntries.length ? 'Contents (⌘ ⇧ O)' : 'No indexed contents for this artifact'}
-                onClick={() => setTocOpen((current) => !current)}
+                onClick={() => togglePanel('contents')}
               >
                 <Icon name="contents" size={14} />
                 <span>Contents</span>
+              </button>
+              <button
+                className={`context-button${detailsOpen ? ' is-active' : ''}`}
+                disabled={!currentArtifact}
+                aria-pressed={detailsOpen}
+                title="Artifact details"
+                onClick={() => togglePanel('details')}
+              >
+                <Icon name="info" size={14} />
+                <span>Details</span>
               </button>
               <span className="action-divider" />
               <button
@@ -368,28 +374,39 @@ export function ArtifactWorkspace({
               />
             )}
 
-            {tocOpen && currentArtifact ? (
-              <aside className="toc-panel" aria-label="Contents">
-                <div className="toc-header">
-                  <span>Contents</span>
-                  <button className="icon-button" aria-label="Close contents" onClick={() => setTocOpen(false)}>
+            {activePanel && currentArtifact ? (
+              <aside
+                className="context-panel"
+                aria-label={activePanel === 'contents' ? 'Contents' : 'Details'}
+              >
+                <div className="context-panel-header">
+                  <span>{activePanel === 'contents' ? 'Contents' : 'Details'}</span>
+                  <button
+                    className="icon-button"
+                    aria-label={`Close ${activePanel}`}
+                    onClick={() => setActivePanel(null)}
+                  >
                     <Icon name="close" size={14} />
                   </button>
                 </div>
-                {tocEntries.length === 0 ? (
-                  <p className="toc-empty">This artifact does not include indexed headings.</p>
+                {activePanel === 'contents' ? (
+                  tocEntries.length === 0 ? (
+                    <p className="toc-empty">This artifact does not include indexed headings.</p>
+                  ) : (
+                    <nav className="toc-list" aria-label="Artifact headings">
+                      {tocEntries.map((entry) => (
+                        <button
+                          className={`toc-link${entry.level >= 3 ? ' toc-level-3' : ''}`}
+                          key={`${entry.id}:${entry.text}`}
+                          onClick={() => jumpToHeading(entry.id)}
+                        >
+                          {entry.text}
+                        </button>
+                      ))}
+                    </nav>
+                  )
                 ) : (
-                  <nav className="toc-list" aria-label="Artifact headings">
-                    {tocEntries.map((entry) => (
-                      <button
-                        className={`toc-link${entry.level >= 3 ? ' toc-level-3' : ''}`}
-                        key={`${entry.id}:${entry.text}`}
-                        onClick={() => jumpToHeading(entry.id)}
-                      >
-                        {entry.text}
-                      </button>
-                    ))}
-                  </nav>
+                  <ArtifactDetails artifact={currentArtifact} />
                 )}
               </aside>
             ) : null}
@@ -420,6 +437,73 @@ function findArtifact(index: SiteIndex, path: string) {
   return index.artifacts.find((artifact) => artifact.path === path || artifact.id === path)
 }
 
+function ArtifactDetails({ artifact }: { artifact: ArtifactIndexEntry }) {
+  const authors = artifact.authors ?? []
+  const repositoryUrl = safeHttpsUrl(artifact.source?.repositoryUrl)
+
+  return (
+    <div className="artifact-details">
+      {authors.length > 0 ? (
+        <section className="details-authors" aria-label={authors.length === 1 ? 'Author' : 'Authors'}>
+          <p className="details-section-label">{authors.length === 1 ? 'Author' : 'Authors'}</p>
+          <div className="details-author-list">
+            {authors.map((author) => (
+              <a
+                className="details-author"
+                href={`https://github.com/${encodeURIComponent(author.login)}`}
+                key={`${author.provider}:${author.login}`}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`@${author.login} on GitHub`}
+              >
+                <span className="details-avatar" aria-hidden="true">{author.login.slice(0, 1).toUpperCase()}</span>
+                <span className="details-author-copy">
+                  <span className="details-author-login">@{author.login}</span>
+                  <span className="details-author-provider">GitHub</span>
+                </span>
+                <Icon name="external" size={12} />
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <div className={`details-facts${authors.length > 0 ? ' has-authors' : ''}`}>
+        <div className="details-fact">
+          <span className="details-label">Updated</span>
+          <time dateTime={artifact.updatedAt}>{formatLongDate(artifact.updatedAt)}</time>
+        </div>
+        {artifact.source ? (
+          <div className="details-fact details-source-fact">
+            <span className="details-label">Source</span>
+            <div className="details-source-value">
+              {repositoryUrl ? (
+                <a className="details-source-link" href={repositoryUrl} target="_blank" rel="noreferrer">
+                  <span>{artifact.source.repository}</span>
+                  <Icon name="external" size={12} />
+                </a>
+              ) : (
+                <span className="details-source-name">{artifact.source.repository}</span>
+              )}
+              <span className="details-source-ref">{artifact.source.ref}</span>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+function safeHttpsUrl(value?: string) {
+  if (!value) return undefined
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' ? url.href : undefined
+  } catch {
+    return undefined
+  }
+}
+
 function folderAncestors(path?: string) {
   if (!path) return []
   const segments = path.split('/').filter(Boolean).slice(0, -1)
@@ -439,4 +523,10 @@ function formatDate(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.valueOf())) return value
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date)
+}
+
+function formatLongDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.valueOf())) return value
+  return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(date)
 }

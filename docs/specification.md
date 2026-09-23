@@ -158,8 +158,12 @@ Example:
       "path": "incidents/123",
       "artifactUrl": "/_artifacts/sre/incidents/123/index.html",
       "updatedAt": "2026-09-22T00:00:00Z",
+      "authors": [
+        { "provider": "github", "login": "octocat" }
+      ],
       "source": {
         "repository": "example/sre",
+        "repositoryUrl": "https://github.com/example/sre",
         "ref": "main"
       },
       "toc": [
@@ -277,7 +281,12 @@ The selected artifact is loaded from /_artifacts/* into the iframe.
 
 ### Right sidebar
 
-The right sidebar displays table-of-contents metadata when present and can navigate to heading anchors in the artifact.
+The optional right panel has two views, toggled from the workspace header:
+
+- **Contents** displays table-of-contents metadata and navigates to heading anchors in the artifact.
+- **Details** displays the artifact's author attribution, last-updated date, and source repository link/ref.
+
+Both views use the same overlay panel so opening metadata does not narrow or reflow the artifact. `updatedAt` describes the artifact's last relevant source update, not the index generation time. `authors` is explicit content attribution (not an inferred last committer); each GitHub author is represented by provider and login. `source.repositoryUrl` is the canonical clickable repository URL, while `repository` remains its display name.
 
 ## 9. Source and mount model
 
@@ -382,8 +391,10 @@ Candidate metadata:
 - logical path
 - filename
 - updated time
+- explicit author attribution (GitHub account)
 - commit SHA
 - source repository
+- source repository URL
 - source ref
 - headings / TOC
 - optional tags

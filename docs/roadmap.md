@@ -24,7 +24,7 @@ Target user experience:
 - /:site/* deep-links to an artifact.
 - Left sidebar shows a searchable/filterable artifact tree.
 - Main pane renders the selected artifact in an iframe.
-- Right sidebar shows a table of contents when metadata is available.
+- An optional right panel switches between indexed contents and artifact details (author, update date, and source).
 - Direct navigation and reload restore the same state.
 
 VRT is optional at this stage and should focus on the application shell rather than arbitrary artifact contents.

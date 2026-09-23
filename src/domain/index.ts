@@ -9,8 +9,14 @@ export type TocEntry = {
   id: string
 }
 
+export type ArtifactAuthor = {
+  provider: 'github'
+  login: string
+}
+
 export type ArtifactSource = {
   repository: string
+  repositoryUrl?: string
   ref: string
 }
 
@@ -21,6 +27,7 @@ export type ArtifactIndexEntry = {
   filename?: string
   artifactUrl: string
   updatedAt: string
+  authors?: ArtifactAuthor[]
   source?: ArtifactSource
   toc?: TocEntry[]
 }

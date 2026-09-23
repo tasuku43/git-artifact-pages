@@ -85,8 +85,37 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   await expect(breadcrumb).toContainText('incidents')
   await expect(breadcrumb).not.toContainText('SRE')
 
+  const header = page.locator('.context-bar')
+  await expect(header).not.toContainText('Sep 22, 2026')
+  await expect(header).not.toContainText('example/payments')
+  const detailsButton = page.getByRole('button', { name: 'Details', exact: true })
+  await expect(detailsButton).toHaveAttribute('aria-pressed', 'false')
+  await detailsButton.click()
+  const details = page.getByRole('complementary', { name: 'Details' })
+  await expect(details).toBeVisible()
+  await expect(details.getByRole('link', { name: '@maya-chen on GitHub' })).toHaveAttribute(
+    'href',
+    'https://github.com/maya-chen',
+  )
+  await expect(details.getByRole('link', { name: /example\/payments/ })).toHaveAttribute(
+    'href',
+    'https://github.com/example/payments',
+  )
+  await expect(details.getByText('Sep 22, 2026')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Contents', exact: true }).click()
+  await expect(details).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Contents', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Contents', exact: true }).click()
+  await expect(page.getByRole('complementary', { name: 'Contents' })).toBeHidden()
+  await detailsButton.click()
+  await expect(details).toBeVisible()
+  await detailsButton.click()
+  await expect(details).toBeHidden()
+
   await page.getByRole('button', { name: 'Contents', exact: true }).click()
   const contents = page.getByRole('complementary', { name: 'Contents' })
+  await expect(contents).toBeVisible()
   await contents.getByRole('button', { name: 'Root cause' }).click()
   await expect(page).toHaveURL(/#root-cause$/)
 

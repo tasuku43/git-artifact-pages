@@ -5,6 +5,7 @@ type IconName =
   | 'file'
   | 'folder'
   | 'contents'
+  | 'info'
   | 'copy'
   | 'external'
   | 'close'
@@ -40,6 +41,8 @@ export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
       return <svg {...common}><path d="M1.8 4.2h4l1.5 1.6h6.9v6.7H1.8z" /><path d="M1.8 5.8V3.5h4.4l1.4 1.4" /></svg>
     case 'contents':
       return <svg {...common}><path d="M3 3.2h10M3 6.8h10M3 10.4h7" /><circle cx="2" cy="3.2" r=".35" fill="currentColor" stroke="none" /><circle cx="2" cy="6.8" r=".35" fill="currentColor" stroke="none" /><circle cx="2" cy="10.4" r=".35" fill="currentColor" stroke="none" /></svg>
+    case 'info':
+      return <svg {...common}><circle cx="8" cy="8" r="5.9" /><path d="M8 7.2v4" /><circle cx="8" cy="4.7" r=".45" fill="currentColor" stroke="none" /></svg>
     case 'copy':
       return <svg {...common}><rect x="5.3" y="4.5" width="7.2" height="9" rx="1.5" /><path d="M9.2 2.1H4.1a1.5 1.5 0 0 0-1.5 1.5v6.9" /></svg>
     case 'external':
