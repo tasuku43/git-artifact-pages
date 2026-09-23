@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import sreIndex from '../../fixtures/storage/_indexes/sre.json'
-import frontendIndex from '../../fixtures/storage/_indexes/frontend.json'
+import { storyIndexes } from '../stories/fixtures'
 import type { ArtifactIndexEntry, SiteIndex } from '../domain/index'
 import { CommandPalette, type PaletteCommand } from './CommandPalette'
 
-const indexes = [sreIndex, frontendIndex] as SiteIndex[]
-const currentIndex = sreIndex as SiteIndex
+const indexes = storyIndexes as SiteIndex[]
+const currentIndex = indexes[0]
 const currentArtifact = currentIndex.artifacts[0] as ArtifactIndexEntry
 
 type PaletteStoryArgs = { seed: string }
@@ -47,8 +46,8 @@ const meta = {
   argTypes: {
     seed: {
       control: 'radio',
-      options: ['', 'checkout', '@', '>', '#'],
-      description: 'Start with a search or switch to a search scope.',
+      options: ['', 'checkout', 'pltf', 'chk lat', '@', '>', '#'],
+      description: 'Try fuzzy terms or switch to a search scope.',
     },
   },
   render: (args: PaletteStoryArgs) => <PaletteStory key={args.seed} {...args} />,
@@ -61,6 +60,10 @@ export const RecentAndCommands: Story = {}
 
 export const SearchArtifacts: Story = {
   args: { seed: 'checkout' },
+}
+
+export const FuzzySearchInlineTrace: Story = {
+  args: { seed: 'chk lat' },
 }
 
 export const SwitchSites: Story = {

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ArtifactIndexEntry, SiteIndex, TocEntry } from '../domain/index'
+import { fuzzyMatch } from '../domain/fuzzy-search'
+import type { FuzzyMatch } from '../domain/fuzzy-search'
 import { artifactRouteHref } from '../routing'
 import { Icon } from './Icon'
 
@@ -17,7 +19,8 @@ type PaletteEntry = {
   title: string
   subtitle?: string
   shortcut?: string
-  query?: string
+  titleMatch?: FuzzyMatch
+  subtitleMatch?: FuzzyMatch
   onSelect: () => void
 }
 
@@ -161,8 +164,12 @@ export function CommandPalette({
                       <span className="palette-entry-icon">
                         <Icon name={iconForEntry(entry.kind)} size={14} />
                       </span>
-                      <span className="palette-entry-title">{highlight(entry.title, entry.query ?? '')}</span>
-                      {entry.subtitle ? <span className="palette-entry-subtitle">{entry.subtitle}</span> : null}
+                      <span className="palette-entry-title">{highlightMatches(entry.title, entry.titleMatch)}</span>
+                      {entry.subtitle ? (
+                        <span className="palette-entry-subtitle">
+                          {highlightMatches(entry.subtitle, entry.subtitleMatch)}
+                        </span>
+                      ) : null}
                       {entry.shortcut ? <kbd>{entry.shortcut}</kbd> : null}
                     </button>
                   )
@@ -205,40 +212,62 @@ function buildSections({
   onNavigate: (href: string) => void
   onJumpToHeading: (headingId: string) => void
 }): PaletteSection[] {
-  const query = term.toLocaleLowerCase()
-
   if (mode === 'site') {
-    const entries = indexes
-      .filter(({ site }) => `${site.title} ${site.id}`.toLocaleLowerCase().includes(query))
-      .map((index) => ({
-        id: `site:${index.site.id}`,
-        kind: 'site' as const,
-        title: index.site.title,
-        subtitle: `/${index.site.id} · ${index.artifacts.length} artifacts`,
-        onSelect: () => onNavigate(`/${encodeURIComponent(index.site.id)}`),
-      }))
+    const entries = indexes.flatMap((index) => {
+      const titleMatch = fuzzyMatch(index.site.title, term)
+      const idMatch = fuzzyMatch(index.site.id, term)
+      if (term.trim() && !titleMatch && !idMatch) return []
+      const subtitle = `/${index.site.id} · ${index.artifacts.length} artifacts`
+      const subtitleMatch = idMatch ? offsetMatch(idMatch, 1) : undefined
+      return [{
+        entry: {
+          id: `site:${index.site.id}`,
+          kind: 'site' as const,
+          title: index.site.title,
+          subtitle,
+          titleMatch,
+          subtitleMatch,
+          onSelect: () => onNavigate(`/${encodeURIComponent(index.site.id)}`),
+        },
+        score: Math.max(titleMatch?.score ?? 0, idMatch?.score ?? 0),
+      }]
+    })
+      .sort((left, right) => right.score - left.score)
+      .map(({ entry }) => entry)
     return entries.length ? [{ title: 'Sites', entries }] : []
   }
 
   if (mode === 'command') {
-    const entries = commands
-      .filter((command) => command.available !== false)
-      .filter((command) => command.title.toLocaleLowerCase().includes(query))
-      .map((command) => ({
-        id: `command:${command.title}`,
-        kind: 'command' as const,
-        title: command.title,
-        subtitle: command.subtitle,
-        shortcut: command.shortcut,
-        onSelect: command.onSelect,
-      }))
+    const entries = commands.flatMap((command) => {
+      if (command.available === false) return []
+      const titleMatch = fuzzyMatch(command.title, term)
+      const subtitleMatch = command.subtitle ? fuzzyMatch(command.subtitle, term) : undefined
+      if (term.trim() && !titleMatch && !subtitleMatch) return []
+      return [{
+        entry: {
+          id: `command:${command.title}`,
+          kind: 'command' as const,
+          title: command.title,
+          subtitle: command.subtitle,
+          shortcut: command.shortcut,
+          titleMatch,
+          subtitleMatch,
+          onSelect: command.onSelect,
+        },
+        score: Math.max(titleMatch?.score ?? 0, subtitleMatch?.score ?? 0),
+      }]
+    })
+      .sort((left, right) => right.score - left.score)
+      .map(({ entry }) => entry)
     return entries.length ? [{ title: 'Commands', entries }] : []
   }
 
   if (mode === 'heading') {
-    const headings = (currentArtifact?.toc ?? [])
-      .filter((heading) => heading.text.toLocaleLowerCase().includes(query))
-      .map((heading) => headingEntry(heading, currentArtifact, onJumpToHeading))
+    const headings = (currentArtifact?.toc ?? []).flatMap((heading) => {
+      const titleMatch = fuzzyMatch(heading.text, term)
+      if (term.trim() && !titleMatch) return []
+      return [headingEntry(heading, currentArtifact, onJumpToHeading, titleMatch)]
+    }).sort((left, right) => (right.titleMatch?.score ?? 0) - (left.titleMatch?.score ?? 0))
     return headings.length
       ? [{ title: `In ${currentArtifact?.title ?? 'this artifact'}`, entries: headings }]
       : []
@@ -248,7 +277,7 @@ function buildSections({
     const recent = [...currentIndex.artifacts]
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
       .slice(0, 4)
-      .map((artifact) => artifactEntry(currentIndex, artifact, '', onNavigate))
+      .map((artifact) => artifactEntry(currentIndex, artifact, onNavigate))
     const commandEntries = commands
       .filter((command) => command.available !== false)
       .slice(0, 3)
@@ -271,12 +300,18 @@ function buildSections({
     ...indexes.filter(({ site }) => site.id !== currentIndex.site.id),
   ]
   return orderedIndexes.flatMap((index) => {
-    const entries = index.artifacts
-      .filter((artifact) =>
-        `${artifact.title} ${artifact.path} ${artifact.filename ?? ''}`.toLocaleLowerCase().includes(query),
-      )
+    const entries = index.artifacts.flatMap((artifact) => {
+      const titleMatch = fuzzyMatch(artifact.title, term)
+      const pathMatch = fuzzyMatch(artifact.path, term)
+      if (!titleMatch && !pathMatch) return []
+      return [{
+        entry: artifactEntry(index, artifact, onNavigate, titleMatch, pathMatch),
+        score: (titleMatch?.score ?? 0) * 1.12 + (pathMatch?.score ?? 0),
+      }]
+    })
+      .sort((left, right) => right.score - left.score)
       .slice(0, 8)
-      .map((artifact) => artifactEntry(index, artifact, term, onNavigate))
+      .map(({ entry }) => entry)
     return entries.length ? [{ title: index.site.title, entries }] : []
   })
 }
@@ -284,15 +319,17 @@ function buildSections({
 function artifactEntry(
   index: SiteIndex,
   artifact: ArtifactIndexEntry,
-  query: string,
   onNavigate: (href: string) => void,
+  titleMatch?: FuzzyMatch,
+  pathMatch?: FuzzyMatch,
 ): PaletteEntry {
   return {
     id: `artifact:${index.site.id}:${artifact.id}`,
     kind: 'artifact',
     title: artifact.title,
     subtitle: artifact.path,
-    query,
+    titleMatch,
+    subtitleMatch: pathMatch,
     onSelect: () => onNavigate(artifactRouteHref(index.site.id, artifact.path)),
   }
 }
@@ -301,12 +338,14 @@ function headingEntry(
   heading: TocEntry,
   artifact: ArtifactIndexEntry | undefined,
   onJumpToHeading: (headingId: string) => void,
+  titleMatch?: FuzzyMatch,
 ): PaletteEntry {
   return {
     id: `heading:${heading.id}`,
     kind: 'heading',
     title: heading.text,
     subtitle: heading.level > 1 ? `Heading ${heading.level}` : 'Heading',
+    titleMatch,
     onSelect: () => {
       if (artifact) onJumpToHeading(heading.id)
     },
@@ -320,15 +359,16 @@ function iconForEntry(kind: PaletteEntry['kind']) {
   return 'file' as const
 }
 
-function highlight(text: string, query: string) {
-  if (!query) return text
-  const index = text.toLocaleLowerCase().indexOf(query.toLocaleLowerCase())
-  if (index < 0) return text
+function highlightMatches(text: string, match?: FuzzyMatch) {
+  if (!match) return text
+  const positions = new Set(match.positions)
   return (
-    <>
-      {text.slice(0, index)}
-      <mark>{text.slice(index, index + query.length)}</mark>
-      {text.slice(index + query.length)}
-    </>
+    Array.from(text).map((character, index) => positions.has(index)
+      ? <mark className="palette-match" key={index}>{character}</mark>
+      : character)
   )
+}
+
+function offsetMatch(match: FuzzyMatch, offset: number): FuzzyMatch {
+  return { ...match, positions: match.positions.map((position) => position + offset) }
 }

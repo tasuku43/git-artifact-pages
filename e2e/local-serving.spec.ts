@@ -232,6 +232,27 @@ test('the command palette shortcut works while the artifact iframe has focus', a
   await expect(page).toHaveURL(/\/sre\/architecture\/platform-topology$/)
 })
 
+test('command palette fuzzy search shows matched characters in titles and paths', async ({ page }) => {
+  await page.goto('/sre/incidents/checkout-latency')
+  await page.getByRole('button', { name: 'Open command palette (⌘ K)' }).click()
+
+  const palette = page.getByRole('dialog', { name: 'Command palette' })
+  const search = palette.getByRole('textbox', { name: 'Search artifacts, sites, commands, and headings' })
+  await search.fill('pltf')
+
+  const platform = palette.getByRole('option', { name: /Platform topology/ })
+  await expect(platform).toBeVisible()
+  expect(await platform.locator('.palette-entry-title .palette-match').allTextContents()).toEqual(['P', 'l', 't', 'f'])
+  expect(await platform.locator('.palette-entry-subtitle .palette-match').allTextContents()).toEqual(['p', 'l', 't', 'f'])
+  await expect(platform.locator('.palette-entry-title .palette-match').first()).toHaveCSS('text-decoration-line', 'none')
+
+  await search.fill('chk lat')
+  const checkout = palette.getByRole('option', { name: /Checkout latency incident review/ })
+  await expect(checkout).toBeVisible()
+  expect(await checkout.locator('.palette-entry-title .palette-match').allTextContents()).toEqual(['C', 'h', 'k', 'l', 'a', 't'])
+  expect(await checkout.locator('.palette-entry-subtitle .palette-match').allTextContents()).toEqual(['c', 'h', 'k', 'l', 'a', 't'])
+})
+
 function artifactAssetPaths(siteId: string, artifactPath: string) {
   const root = `/_artifacts/${siteId}/${artifactPath}/assets`
   return [

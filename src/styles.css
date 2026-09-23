@@ -12,6 +12,7 @@
   --hover: rgba(16, 20, 24, 0.05);
   --active: rgba(16, 20, 24, 0.085);
   --mark: #111416;
+  --palette-match: #286b4d;
   --ring: #3f7cc0;
   --scrim: rgba(24, 28, 32, 0.3);
   --lift: 0 0 0 0.5px rgba(16, 20, 24, 0.04), 0 1px 2px rgba(16, 20, 24, 0.04);
@@ -39,6 +40,7 @@
   --hover: rgba(255, 255, 255, 0.055);
   --active: rgba(255, 255, 255, 0.1);
   --mark: #eceef0;
+  --palette-match: #a9d8c1;
   --ring: #6fa6e0;
   --scrim: rgba(0, 0, 0, 0.52);
   --lift: 0 0 0 0.5px rgba(255, 255, 255, 0.05);
@@ -1377,6 +1379,14 @@ mark {
 
 .palette-entry.is-selected .palette-entry-subtitle {
   color: var(--text-secondary);
+}
+
+.palette-entry .palette-match {
+  padding: 0;
+  color: var(--palette-match);
+  background: transparent;
+  font-weight: 720;
+  text-decoration: none;
 }
 
 .palette-empty {
