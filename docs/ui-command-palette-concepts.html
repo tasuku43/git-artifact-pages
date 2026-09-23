@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Command-K fuzzy search — design study</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f3f4f3;
+        --paper: #fff;
+        --ink: #202426;
+        --muted: #70797b;
+        --soft: #a2aaab;
+        --rule: #e2e6e4;
+        --accent: #3e7164;
+        --accent-wash: #e0eee8;
+        --palette: #191c1e;
+        --palette-raised: #202426;
+        --palette-text: #edf0ef;
+        --palette-muted: #9ba4a4;
+        --palette-soft: #697373;
+        --palette-rule: rgba(255, 255, 255, .085);
+        --palette-hover: rgba(255, 255, 255, .075);
+        --match: #b9e2d2;
+        --match-ink: #d9f1e7;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-width: 360px; background: var(--page); color: var(--ink); }
+      button, input { font: inherit; }
+      button { color: inherit; }
+      .masthead {
+        height: 62px; display: flex; align-items: center; justify-content: space-between;
+        padding: 0 max(28px, calc((100vw - 1376px) / 2)); border-bottom: 1px solid var(--rule);
+        background: rgba(255,255,255,.68);
+      }
+      .brand { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 650; letter-spacing: .015em; }
+      .brand-mark { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 7px; color: #edf4f0; background: #273d36; font-family: Georgia, serif; font-size: 15px; }
+      .study-tag, .eyebrow, .micro-label { color: var(--muted); font-size: 10px; font-weight: 650; letter-spacing: .105em; text-transform: uppercase; }
+      main { width: min(1376px, calc(100% - 56px)); margin: 0 auto; padding: 47px 0 48px; }
+      .intro { max-width: 800px; margin-bottom: 25px; }
+      .eyebrow { margin: 0 0 11px; color: var(--accent); }
+      h1 { margin: 0; font-size: clamp(32px, 4vw, 46px); font-weight: 560; letter-spacing: -.052em; line-height: 1.08; }
+      .dek { max-width: 675px; margin: 13px 0 0; color: #677071; font-size: 15px; line-height: 1.65; }
+      .query-samples { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 24px 0 19px; }
+      .query-samples > span { margin-right: 3px; color: var(--muted); font-size: 11px; }
+      .query-chip {
+        display: inline-flex; align-items: center; gap: 7px; padding: 7px 10px; border: 1px solid #d9dfdc;
+        border-radius: 7px; background: rgba(255,255,255,.52); color: #525c5b; cursor: pointer;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; transition: .15s ease;
+      }
+      .query-chip:hover, .query-chip[aria-pressed="true"] { border-color: #9ebaae; background: #e8f0ec; color: #254b3e; }
+      .query-chip kbd { padding: 2px 4px; border-radius: 4px; color: #75807d; background: rgba(0,0,0,.045); font: 10px ui-sans-serif, sans-serif; }
+      .explorer { display: grid; grid-template-columns: minmax(0, 1fr) 286px; align-items: stretch; gap: 22px; }
+      .demo-card, .notes-card { overflow: hidden; border: 1px solid #dfe4e1; border-radius: 12px; background: var(--paper); box-shadow: 0 8px 26px rgba(26,42,35,.045); }
+      .demo-head { min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 17px; border-bottom: 1px solid #e9ecea; }
+      .demo-heading { min-width: 0; }
+      .demo-heading strong { display: block; font-size: 12px; font-weight: 620; }
+      .demo-heading span { display: block; margin-top: 3px; color: var(--soft); font-size: 10px; }
+      .concept-switch { display: flex; gap: 3px; padding: 3px; border: 1px solid #e5e9e7; border-radius: 8px; background: #f6f7f6; }
+      .concept-switch button { padding: 6px 9px; border: 0; border-radius: 5px; background: transparent; color: #737c7a; cursor: pointer; font-size: 10px; white-space: nowrap; }
+      .concept-switch button[aria-pressed="true"] { background: #fff; color: #273d36; box-shadow: 0 1px 3px rgba(20,35,28,.12); }
+      .stage { position: relative; min-height: 555px; overflow: hidden; background: #e8ece9; isolation: isolate; }
+      .fake-topbar { height: 42px; display: flex; align-items: center; gap: 9px; padding: 0 17px; background: #171a1b; color: #e6e9e8; font-size: 11px; }
+      .fake-logo { width: 17px; height: 17px; display: grid; place-items: center; border-radius: 5px; background: #e7efeb; color: #263d35; font-size: 9px; font-weight: 700; }
+      .fake-crumb { color: #85908e; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .fake-top-right { margin-left: auto; color: #a2abaa; font-size: 10px; }
+      .fake-page { min-height: 513px; padding: 42px clamp(28px, 7vw, 88px); background: #f6f4ee; color: #252928; }
+      .fake-page-inner { max-width: 660px; margin: 0 auto; }
+      .fake-kicker { color: #7e877e; font-size: 9px; letter-spacing: .14em; }
+      .fake-page h2 { max-width: 470px; margin: 13px 0 9px; font: 500 clamp(27px, 3.4vw, 42px)/1.06 Georgia, serif; letter-spacing: -.035em; }
+      .fake-page p { max-width: 520px; color: #69716d; font: 13px/1.65 Georgia, serif; }
+      .fake-rule { width: 100%; height: 1px; margin: 27px 0 20px; background: #dcded6; }
+      .fake-section { color: #5e6e62; font-size: 9px; letter-spacing: .12em; }
+      .fake-page h3 { margin: 8px 0; font: 500 21px Georgia, serif; }
+      .fake-lines { width: min(100%, 490px); display: grid; gap: 8px; margin-top: 18px; }
+      .fake-lines i { height: 5px; border-radius: 4px; background: #e3e3dc; }
+      .fake-lines i:nth-child(2) { width: 88%; }.fake-lines i:nth-child(3) { width: 72%; }
+      .stage-scrim { position: absolute; z-index: 1; inset: 42px 0 0; background: rgba(16,19,19,.46); }
+      .palette {
+        position: absolute; z-index: 2; top: 67px; left: 50%; width: min(724px, calc(100% - 44px));
+        max-height: calc(100% - 94px); display: flex; flex-direction: column; overflow: hidden;
+        border: 1px solid rgba(255,255,255,.13); border-radius: 13px; background: var(--palette); color: var(--palette-text);
+        box-shadow: 0 22px 60px rgba(0,0,0,.31), 0 2px 7px rgba(0,0,0,.16); transform: translateX(-50%);
+      }
+      .palette-input-row { height: 53px; display: flex; flex: none; align-items: center; gap: 11px; padding: 0 16px; border-bottom: 1px solid var(--palette-rule); color: #899391; }
+      .search-icon { width: 15px; height: 15px; flex: none; }
+      .palette-input-row input { width: 100%; outline: 0; border: 0; background: transparent; color: var(--palette-text); font-size: 14px; letter-spacing: .005em; }
+      .palette-input-row input::placeholder { color: #727c7a; }
+      .esc-key { padding: 3px 5px; border-radius: 4px; background: rgba(255,255,255,.07); color: #a0aaa7; font: 9px ui-monospace, monospace; }
+      .result-meta { display: flex; align-items: center; justify-content: space-between; padding: 9px 17px 5px; color: var(--palette-soft); font-size: 10px; }
+      .match-method { display: inline-flex; align-items: center; gap: 5px; }
+      .method-dot { width: 5px; height: 5px; border-radius: 50%; background: #83b39e; }
+      .results { min-height: 0; overflow: auto; padding: 0 6px 7px; }
+      .result-row { position: relative; display: flex; align-items: center; gap: 11px; min-height: 53px; padding: 8px 11px; border-radius: 8px; }
+      .result-row + .result-row { margin-top: 1px; }
+      .result-row.is-active { background: var(--palette-hover); }
+      .file-icon { width: 17px; height: 17px; flex: none; color: #9aa4a1; }
+      .result-copy { min-width: 0; flex: 1; }
+      .result-title-line { display: flex; min-width: 0; align-items: center; gap: 9px; }
+      .result-title { min-width: 0; overflow: hidden; color: #e2e7e5; font-size: 12px; font-weight: 510; text-overflow: ellipsis; white-space: nowrap; }
+      .result-path { display: block; margin-top: 3px; overflow: hidden; color: #84908c; font: 10px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; text-overflow: ellipsis; white-space: nowrap; }
+      mark.hit { padding: 0; border-radius: 2px; background: transparent; color: var(--match); font-weight: 730; box-shadow: inset 0 -1px 0 rgba(147,206,180,.58); }
+      .result-field-label { display: none; color: #8ca39a; font-size: 8px; font-weight: 650; letter-spacing: .09em; }
+      .field-tags { display: none; flex: none; align-items: center; gap: 4px; }
+      .field-tags span { padding: 3px 5px; border: 1px solid rgba(172,208,191,.16); border-radius: 4px; color: #a8c7b8; font-size: 8px; letter-spacing: .035em; }
+      .result-arrow { flex: none; color: #718079; font-size: 14px; }
+      .selected-preview { display: none; margin: 2px 6px 7px; padding: 11px 13px 12px; border: 1px solid rgba(158,202,180,.17); border-radius: 8px; background: rgba(137,184,159,.055); }
+      .preview-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; color: #aab6b1; font-size: 9px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
+      .preview-count { color: #83b39e; font: 9px ui-monospace, monospace; letter-spacing: 0; text-transform: none; }
+      .explain-row { display: grid; grid-template-columns: 50px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 23px; }
+      .explain-field { color: #84928d; font-size: 9px; }
+      .explain-fragment { overflow: hidden; color: #c5ceca; font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; text-overflow: ellipsis; white-space: nowrap; }
+      .explain-type { color: #748f82; font-size: 8px; }
+      .palette-footer { display: flex; align-items: center; gap: 13px; min-height: 32px; padding: 0 14px; border-top: 1px solid var(--palette-rule); color: #818b88; font-size: 9px; }
+      .palette-footer span { display: inline-flex; align-items: center; gap: 4px; }
+      .palette-footer kbd { min-width: 15px; padding: 2px 3px; border-radius: 3px; background: rgba(255,255,255,.07); color: #98a19e; text-align: center; font: 9px ui-monospace, monospace; }
+      .concept-b .result-field-label, .concept-b .field-tags { display: inline-flex; }
+      .concept-b .result-field-label { margin-right: 1px; }
+      .concept-b .field-tags { margin-left: auto; }
+      .concept-c .selected-preview { display: block; }
+      .concept-c .palette { top: 48px; max-height: calc(100% - 67px); }
+      .concept-c .result-row { min-height: 48px; }
+      .concept-c .stage-scrim { background: rgba(16,19,19,.5); }
+      .notes-card { display: flex; flex-direction: column; padding: 19px 18px 16px; }
+      .notes-index { display: flex; align-items: center; justify-content: space-between; padding-bottom: 13px; border-bottom: 1px solid #edf0ee; color: var(--accent); font: 10px ui-monospace, monospace; }
+      .notes-index span:last-child { color: #9ca5a1; }
+      .notes-card h2 { margin: 17px 0 7px; font-size: 21px; font-weight: 560; letter-spacing: -.035em; }
+      .notes-summary { margin: 0; color: #6c7572; font-size: 12px; line-height: 1.6; }
+      .note-block { margin-top: 20px; }
+      .note-block .micro-label { color: #89928f; font-size: 9px; }
+      .note-block p { margin: 7px 0 0; color: #424c48; font-size: 11px; line-height: 1.55; }
+      .tradeoff { display: flex; gap: 9px; align-items: flex-start; padding-top: 12px; margin-top: auto; border-top: 1px solid #edf0ee; color: #727b78; font-size: 10px; line-height: 1.5; }
+      .tradeoff svg { width: 14px; height: 14px; flex: none; margin-top: 1px; color: #8f9a95; }
+      .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+      .principle { display: flex; align-items: flex-start; gap: 8px; padding: 11px 13px; border: 1px solid #e3e8e5; border-radius: 9px; background: rgba(255,255,255,.49); }
+      .principle-num { color: #7e9c8e; font: 10px ui-monospace, monospace; }
+      .principle strong { display: block; color: #46514d; font-size: 10px; font-weight: 620; }
+      .principle span { display: block; margin-top: 3px; color: #87908d; font-size: 9px; line-height: 1.4; }
+      @media (max-width: 950px) {
+        .explorer { grid-template-columns: 1fr; }
+        .notes-card { min-height: 260px; }
+        .tradeoff { margin-top: 20px; }
+      }
+      @media (max-width: 620px) {
+        .masthead { height: 54px; padding: 0 17px; }
+        main { width: calc(100% - 32px); padding-top: 32px; }
+        .study-tag { font-size: 8px; }
+        .stage { min-height: 495px; }
+        .fake-page { padding: 32px 22px; }
+        .palette { top: 55px; width: calc(100% - 22px); }
+        .concept-c .palette { top: 37px; max-height: calc(100% - 48px); }
+        .concept-switch button { padding: 6px 7px; font-size: 9px; }
+        .demo-head { align-items: flex-start; flex-direction: column; padding: 12px 14px; }
+        .concept-switch { width: 100%; }
+        .concept-switch button { flex: 1; }
+        .principles { grid-template-columns: 1fr; }
+        .palette-footer { gap: 8px; padding: 0 9px; font-size: 8px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="brand"><span class="brand-mark">g</span><span>Git Artifact Pages</span></div>
+      <div class="study-tag">Product design / interaction study</div>
+    </header>
+    <main>
+      <section class="intro">
+        <p class="eyebrow">Command-K · fuzzy search</p>
+        <h1>Find it by how you remember it.</h1>
+        <p class="dek">A forgiving query is useful only when the result still feels trustworthy. Compare three ways to show both the match and where it came from.</p>
+      </section>
+
+      <div class="query-samples" aria-label="Try a sample query">
+        <span>Try a query</span>
+        <button class="query-chip" data-query="pltf" aria-pressed="true">pltf <kbd>skip letters</kbd></button>
+        <button class="query-chip" data-query="chk lat" aria-pressed="false">chk lat <kbd>two terms</kbd></button>
+        <button class="query-chip" data-query="pay bklg" aria-pressed="false">pay bklg <kbd>path + title</kbd></button>
+      </div>
+
+      <div class="explorer">
+        <section class="demo-card" aria-label="Interactive Command-K mock">
+          <div class="demo-head">
+            <div class="demo-heading"><strong>Search result treatment</strong><span>Illustrative index entries · SRE</span></div>
+            <div class="concept-switch" role="group" aria-label="Choose a design concept">
+              <button data-concept="a" aria-pressed="true">A · Inline trace</button>
+              <button data-concept="b" aria-pressed="false">B · Match labels</button>
+              <button data-concept="c" aria-pressed="false">C · Match details</button>
+            </div>
+          </div>
+          <div class="stage concept-a" id="stage">
+            <div class="fake-topbar"><span class="fake-logo">g</span><span>Git Artifact Pages</span><span class="fake-crumb">/ SRE / architecture</span><span class="fake-top-right">Contents&nbsp;&nbsp; Details</span></div>
+            <div class="fake-page">
+              <div class="fake-page-inner">
+                <span class="fake-kicker">SYSTEMS / PLATFORM NOTES</span>
+                <h2>Designing systems that stay legible.</h2>
+                <p>Good operational documents make the shape of a system easy to hold in your head. They connect one component to the next, and leave enough context for the person who arrives later.</p>
+                <div class="fake-rule"></div>
+                <span class="fake-section">01 — SERVICE SHAPE</span>
+                <h3>Start with the edges.</h3>
+                <div class="fake-lines"><i></i><i></i><i></i></div>
+              </div>
+            </div>
+            <div class="stage-scrim"></div>
+            <div class="palette" role="dialog" aria-label="Command-K search preview">
+              <div class="palette-input-row">
+                <svg class="search-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.8" cy="8.8" r="5.6" stroke="currentColor" stroke-width="1.5"/><path d="m13 13 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <input id="query" type="text" value="pltf" aria-label="Search query" autocomplete="off" spellcheck="false" />
+                <span class="esc-key">esc</span>
+              </div>
+              <div class="result-meta"><span id="result-count">2 artifacts</span><span class="match-method"><i class="method-dot"></i> Smart match</span></div>
+              <div class="results" id="results" role="listbox" aria-label="Artifact results"></div>
+              <div class="selected-preview" id="selected-preview"></div>
+              <div class="palette-footer"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>⌘</kbd><kbd>K</kbd> search</span></div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="notes-card" aria-live="polite">
+          <div class="notes-index"><span id="concept-code">CONCEPT A / 03</span><span id="concept-kind">LOWEST FRICTION</span></div>
+          <h2 id="concept-title">Inline trace</h2>
+          <p class="notes-summary" id="concept-summary">Matched characters are highlighted in place. Title and path stay readable as one compact result.</p>
+          <div class="note-block"><span class="micro-label">How the hit is explained</span><p id="concept-explanation">Follow the highlighted letters in the title and path. The field is clear from the row’s natural hierarchy.</p></div>
+          <div class="note-block"><span class="micro-label">Best when</span><p id="concept-best">Search should feel immediate, with almost no extra chrome around the result.</p></div>
+          <div class="tradeoff"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.3" stroke="currentColor"/><path d="M8 7v4M8 4.5h.01" stroke="currentColor" stroke-linecap="round"/></svg><span id="concept-tradeoff">Trade-off: in a long or ambiguous result list, the reader has to inspect the highlights rather than scan a field label.</span></div>
+        </aside>
+      </div>
+
+      <div class="principles" aria-label="Principles shared by all three concepts">
+        <div class="principle"><span class="principle-num">01</span><div><strong>Show the actual match</strong><span>Highlight characters that matched; don’t imply exact phrase matching.</span></div></div>
+        <div class="principle"><span class="principle-num">02</span><div><strong>Name the source field</strong><span>Make title versus path apparent without exposing an opaque score.</span></div></div>
+        <div class="principle"><span class="principle-num">03</span><div><strong>Keep it calm</strong><span>No percentages, badges everywhere, or extra panel until it earns its space.</span></div></div>
+      </div>
+    </main>
+
+    <script>
+      const artifacts = [
+        { title: 'Platform topology', path: 'architecture/platform-topology' },
+        { title: 'Platform service map', path: 'architecture/service-map' },
+        { title: 'Checkout latency incident review', path: 'incidents/checkout-latency' },
+        { title: 'Payment webhook backlog', path: 'incidents/2026-q3/payment-webhook-backlog' },
+      ];
+      const concepts = {
+        a: {
+          title: 'Inline trace', kind: 'LOWEST FRICTION',
+          summary: 'Matched characters are highlighted in place. Title and path stay readable as one compact result.',
+          explanation: 'Follow the highlighted letters in the title and path. The field is clear from the row’s natural hierarchy.',
+          best: 'Search should feel immediate, with almost no extra chrome around the result.',
+          tradeoff: 'Trade-off: in a long or ambiguous result list, the reader has to inspect the highlights rather than scan a field label.',
+        },
+        b: {
+          title: 'Match labels', kind: 'CLEAREST AT A GLANCE',
+          summary: 'Small Title / Path labels sit beside each result, so the source is explicit before the reader inspects the text.',
+          explanation: 'The labels tell you which fields matched; the same inline highlights show exactly where the letters landed.',
+          best: 'There are many results, or a title and its path both look plausible.',
+          tradeoff: 'Trade-off: the extra labels add a little visual weight to every row, including obvious matches.',
+        },
+        c: {
+          title: 'Match details', kind: 'MOST EXPLANATORY',
+          summary: 'Keep the list quiet; show a small “Why this matched” trace for the currently selected result.',
+          explanation: 'The selected match is unpacked by field and query term, including which letters were skipped.',
+          best: 'A user wants confidence before opening, or several results are close together.',
+          tradeoff: 'Trade-off: it makes the palette taller and spends more attention on the selected row.',
+        },
+      };
+
+      const queryInput = document.querySelector('#query');
+      const resultsNode = document.querySelector('#results');
+      const previewNode = document.querySelector('#selected-preview');
+      const stage = document.querySelector('#stage');
+      let concept = 'a';
+
+      function bestWordMatch(word, query) {
+        const source = word.toLocaleLowerCase();
+        const needle = query.toLocaleLowerCase();
+        const positions = [];
+        let cursor = 0;
+        for (const char of needle) {
+          const found = source.indexOf(char, cursor);
+          if (found < 0) return null;
+          positions.push(found);
+          cursor = found + 1;
+        }
+        let runs = 0;
+        for (let i = 1; i < positions.length; i += 1) if (positions[i] === positions[i - 1] + 1) runs += 1;
+        const score = (source === needle ? 100 : source.startsWith(needle) ? 80 : 50) + runs * 3 - (positions.at(-1) ?? 0) * .15;
+        return { score, positions };
+      }
+
+      function matchField(text, queryTerms) {
+        const words = [];
+        let start = 0;
+        const split = /[\s\/-]+/g;
+        let part;
+        while ((part = split.exec(text)) !== null) {
+          if (part.index > start) words.push({ text: text.slice(start, part.index), start });
+          start = part.index + part[0].length;
+        }
+        if (start < text.length) words.push({ text: text.slice(start), start });
+        const positions = new Set();
+        let score = 0;
+        for (const term of queryTerms) {
+          const candidates = words.map((word) => ({ word, result: bestWordMatch(word.text, term) })).filter((x) => x.result);
+          if (!candidates.length) return null;
+          candidates.sort((left, right) => right.result.score - left.result.score);
+          const best = candidates[0];
+          best.result.positions.forEach((index) => positions.add(best.word.start + index));
+          score += best.result.score;
+        }
+        return { positions, score };
+      }
+
+      function getHits(artifact, queryTerms) {
+        const title = matchField(artifact.title, queryTerms);
+        const path = matchField(artifact.path, queryTerms);
+        return { title, path, score: (title?.score ?? 0) * 1.12 + (path?.score ?? 0) };
+      }
+
+      function renderMarked(text, match) {
+        if (!match) return escapeHtml(text);
+        return [...text].map((char, index) => match.positions.has(index) ? `<mark class="hit">${escapeHtml(char)}</mark>` : escapeHtml(char)).join('');
+      }
+
+      function escapeHtml(value) {
+        return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+      }
+
+      function renderResults() {
+        const terms = queryInput.value.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
+        if (!terms.length) {
+          document.querySelector('#result-count').textContent = 'Start typing to search';
+          resultsNode.innerHTML = '<div class="result-row is-active"><span class="file-icon">⌕</span><div class="result-copy"><span class="result-title">Try “pltf” or “chk lat”</span><span class="result-path">Fuzzy search across title and path</span></div></div>';
+          previewNode.innerHTML = '';
+          return;
+        }
+        const found = artifacts.map((artifact) => ({ artifact, hits: getHits(artifact, terms) }))
+          .filter(({ hits }) => hits.title || hits.path)
+          .sort((left, right) => right.hits.score - left.hits.score);
+        document.querySelector('#result-count').textContent = `${found.length} ${found.length === 1 ? 'artifact' : 'artifacts'}`;
+        if (!found.length) {
+          resultsNode.innerHTML = '<div class="result-row"><div class="result-copy"><span class="result-title">No matching artifacts</span><span class="result-path">Try fewer letters or another word</span></div></div>';
+          previewNode.innerHTML = '';
+          return;
+        }
+        resultsNode.innerHTML = found.map(({ artifact, hits }, index) => {
+          const fields = [hits.title && 'TITLE', hits.path && 'PATH'].filter(Boolean);
+          return `<div class="result-row${index === 0 ? ' is-active' : ''}" role="option" aria-selected="${index === 0}">
+            <svg class="file-icon" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M4.75 2.75h5.1l3.4 3.4v9.1h-8.5z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M9.75 2.9v3.5h3.35" stroke="currentColor" stroke-width="1.1"/></svg>
+            <div class="result-copy"><div class="result-title-line"><span class="result-field-label">Title</span><span class="result-title">${renderMarked(artifact.title, hits.title)}</span></div><span class="result-path"><span class="result-field-label">Path</span>${renderMarked(artifact.path, hits.path)}</span></div>
+            <span class="field-tags">${fields.map((field) => `<span>${field}</span>`).join('')}</span><span class="result-arrow">${index === 0 ? '↵' : ''}</span>
+          </div>`;
+        }).join('');
+        const selected = found[0];
+        previewNode.innerHTML = `<div class="preview-title"><span>Why this matched</span><span class="preview-count">${terms.length} terms · selected</span></div>
+          ${selected.hits.title ? `<div class="explain-row"><span class="explain-field">Title</span><span class="explain-fragment">${renderMarked(selected.artifact.title, selected.hits.title)}</span><span class="explain-type">fuzzy</span></div>` : ''}
+          ${selected.hits.path ? `<div class="explain-row"><span class="explain-field">Path</span><span class="explain-fragment">${renderMarked(selected.artifact.path, selected.hits.path)}</span><span class="explain-type">fuzzy</span></div>` : ''}`;
+      }
+
+      function setConcept(next) {
+        concept = next;
+        stage.className = `stage concept-${next}`;
+        document.querySelectorAll('[data-concept]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.concept === next)));
+        const data = concepts[next];
+        document.querySelector('#concept-code').textContent = `CONCEPT ${next.toUpperCase()} / 03`;
+        document.querySelector('#concept-kind').textContent = data.kind;
+        document.querySelector('#concept-title').textContent = data.title;
+        document.querySelector('#concept-summary').textContent = data.summary;
+        document.querySelector('#concept-explanation').textContent = data.explanation;
+        document.querySelector('#concept-best').textContent = data.best;
+        document.querySelector('#concept-tradeoff').textContent = data.tradeoff;
+        renderResults();
+      }
+
+      queryInput.addEventListener('input', () => {
+        document.querySelectorAll('[data-query]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.query === queryInput.value)));
+        renderResults();
+      });
+      document.querySelectorAll('[data-query]').forEach((button) => button.addEventListener('click', () => {
+        queryInput.value = button.dataset.query;
+        document.querySelectorAll('[data-query]').forEach((chip) => chip.setAttribute('aria-pressed', String(chip === button)));
+        renderResults();
+      }));
+      document.querySelectorAll('[data-concept]').forEach((button) => button.addEventListener('click', () => setConcept(button.dataset.concept)));
+      renderResults();
+    </script>
+  </body>
+</html>
