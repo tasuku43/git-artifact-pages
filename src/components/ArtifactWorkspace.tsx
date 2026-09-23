@@ -3,9 +3,9 @@ import { CommandPalette, type PaletteCommand } from './CommandPalette'
 import { Icon } from './Icon'
 import { Sidebar } from './Sidebar'
 import { SiteHome } from './SiteHome'
+import { ThemeSwitcher } from './ThemeSwitcher'
 import type { TreeStyle } from './ArtifactTree'
 import type { ArtifactIndexEntry, SiteIndex, SiteSummary } from '../domain/index'
-import { themeModeActionLabel, themeModeIcon } from '../domain/theme'
 import type { ResolvedTheme, ThemeMode } from '../domain/theme'
 import { artifactRouteHref, type AppRoute } from '../routing'
 
@@ -21,7 +21,6 @@ export function ArtifactWorkspace({
   navigate,
   themeMode,
   theme,
-  onToggleTheme,
   onSetThemeMode,
   index,
   sidebarTreeStyle = 'branch-guides',
@@ -37,7 +36,6 @@ export function ArtifactWorkspace({
   navigate: (href: string) => void
   themeMode: ThemeMode
   theme: ResolvedTheme
-  onToggleTheme: () => void
   onSetThemeMode: (mode: ThemeMode) => void
   index: SiteIndex
   sidebarTreeStyle?: TreeStyle
@@ -251,9 +249,8 @@ export function ArtifactWorkspace({
         onExpandedPathsChange={updateExpandedPaths}
         onOpenPalette={openPalette}
         onOpenArtifact={openArtifact}
-        onToggleTheme={onToggleTheme}
-        theme={theme}
         themeMode={themeMode}
+        onSetThemeMode={onSetThemeMode}
         onCollapse={() => updateSidebarOpen(false, true)}
         treeStyle={sidebarTreeStyle}
       />
@@ -298,14 +295,13 @@ export function ArtifactWorkspace({
           </div>
           <div className="collapsed-rail-spacer" />
           <div className="collapsed-rail-group">
-            <button
-              className="collapsed-rail-button"
-              title={themeModeActionLabel(themeMode, theme)}
-              aria-label={themeModeActionLabel(themeMode, theme)}
-              onClick={onToggleTheme}
-            >
-              <Icon name={themeModeIcon(themeMode)} size={16} />
-            </button>
+            <ThemeSwitcher
+              buttonClassName="collapsed-rail-button"
+              iconSize={16}
+              mode={themeMode}
+              onChange={onSetThemeMode}
+              placement="right"
+            />
           </div>
         </aside>
       ) : null}
@@ -385,6 +381,7 @@ export function ArtifactWorkspace({
                 key={currentArtifact.artifactUrl}
                 src={iframeSrc}
                 title={currentArtifact.title}
+                style={{ colorScheme: theme }}
                 onLoad={(event) => {
                   event.currentTarget.contentWindow?.addEventListener('keydown', handleArtifactKeyDown, true)
                 }}

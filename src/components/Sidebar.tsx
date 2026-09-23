@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ArtifactIndexEntry, SiteIndex, SiteSummary } from '../domain/index'
-import { themeModeActionLabel, themeModeIcon } from '../domain/theme'
-import type { ResolvedTheme, ThemeMode } from '../domain/theme'
+import type { ThemeMode } from '../domain/theme'
 import { ArtifactTree, type TreeStyle } from './ArtifactTree'
 import { Icon } from './Icon'
+import { ThemeSwitcher } from './ThemeSwitcher'
 
 export function Sidebar({
   id,
@@ -14,9 +14,8 @@ export function Sidebar({
   onExpandedPathsChange,
   onOpenPalette,
   onOpenArtifact,
-  onToggleTheme,
-  theme,
   themeMode,
+  onSetThemeMode,
   onCollapse,
   treeStyle = 'branch-guides',
 }: {
@@ -28,9 +27,8 @@ export function Sidebar({
   onExpandedPathsChange: (update: (current: Set<string>) => Set<string>) => void
   onOpenPalette: (seed: string) => void
   onOpenArtifact: (artifact: ArtifactIndexEntry) => void
-  onToggleTheme: () => void
-  theme: ResolvedTheme
   themeMode: ThemeMode
+  onSetThemeMode: (mode: ThemeMode) => void
   onCollapse: () => void
   treeStyle?: TreeStyle
 }) {
@@ -198,14 +196,11 @@ export function Sidebar({
         <span className="index-date">
           Index updated <time dateTime={index.generatedAt}>{formatDate(index.generatedAt)}</time>
         </span>
-        <button
-          className="icon-button theme-toggle"
-          title={themeModeActionLabel(themeMode, theme)}
-          aria-label={themeModeActionLabel(themeMode, theme)}
-          onClick={onToggleTheme}
-        >
-          <Icon name={themeModeIcon(themeMode)} size={15} />
-        </button>
+        <ThemeSwitcher
+          buttonClassName="icon-button theme-toggle"
+          mode={themeMode}
+          onChange={onSetThemeMode}
+        />
       </footer>
     </aside>
   )

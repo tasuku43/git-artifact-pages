@@ -250,6 +250,37 @@ function waitForResponses(page: Page, paths: string[]) {
   }))
 }
 
+test('the selected theme is offered in the menu and reaches adaptive artifact iframes', async ({ page }) => {
+  await page.goto('/showcase/tests/color-scheme-response')
+
+  const frame = page.frameLocator('iframe[title="Color scheme response fixture"]')
+  const systemTheme = await page.locator('html').getAttribute('data-theme')
+  expect(systemTheme).toMatch(/^(light|dark)$/)
+  const systemLabel = systemTheme === 'dark' ? 'Dark' : 'Light'
+  await expect(frame.getByRole('status')).toHaveText(systemLabel)
+  await expect(frame.locator('html')).toHaveAttribute('data-preferred-scheme', systemTheme!)
+
+  await page.getByRole('button', { name: 'Color theme: System' }).click()
+  const menu = page.getByRole('menu', { name: 'Color theme' })
+  await expect(menu.getByRole('menuitemradio', { name: 'System' })).toHaveAttribute('aria-checked', 'true')
+  await expect(menu.getByRole('menuitemradio', { name: 'Light' })).toBeVisible()
+  await expect(menu.getByRole('menuitemradio', { name: 'Dark' })).toBeVisible()
+
+  await menu.getByRole('menuitemradio', { name: 'Dark' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await expect(page.locator('iframe')).toHaveCSS('color-scheme', 'dark')
+
+  await page.getByRole('button', { name: 'Color theme: Dark' }).click()
+  await page.getByRole('menuitemradio', { name: 'Light' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await expect(page.locator('iframe')).toHaveCSS('color-scheme', 'light')
+
+  await page.getByRole('button', { name: 'Color theme: Light' }).click()
+  await page.getByRole('menuitemradio', { name: 'System' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', systemTheme!)
+  await expect(page.locator('iframe')).toHaveCSS('color-scheme', systemTheme!)
+})
+
 test('the collapsed rail searches artifacts and switches sites', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' })
   const frontendIndex = page.waitForResponse((response) => {
@@ -264,7 +295,10 @@ test('the collapsed rail searches artifacts and switches sites', async ({ page }
   await page.getByRole('button', { name: 'Collapse sidebar' }).click()
   await expect(page.getByRole('button', { name: 'Expand navigation' })).toBeVisible()
 
-  await page.getByRole('button', { name: /Theme: System/ }).click()
+  await page.getByRole('button', { name: 'Color theme: System' }).click()
+  const themeMenu = page.getByRole('menu', { name: 'Color theme' })
+  await expect(themeMenu.getByRole('menuitemradio', { name: 'System' })).toHaveAttribute('aria-checked', 'true')
+  await themeMenu.getByRole('menuitemradio', { name: 'Dark' }).click()
   await expect.poll(() => page.evaluate(() => localStorage.getItem('git-artifact-pages-theme'))).toBe('dark')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
   await page.emulateMedia({ colorScheme: 'dark' })
@@ -272,7 +306,8 @@ test('the collapsed rail searches artifacts and switches sites', async ({ page }
   await page.emulateMedia({ colorScheme: 'light' })
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
 
-  await page.getByRole('button', { name: /Theme: Dark/ }).click()
+  await page.getByRole('button', { name: 'Color theme: Dark' }).click()
+  await page.getByRole('menuitemradio', { name: 'Light' }).click()
   await expect.poll(() => page.evaluate(() => localStorage.getItem('git-artifact-pages-theme'))).toBe('light')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await page.emulateMedia({ colorScheme: 'dark' })

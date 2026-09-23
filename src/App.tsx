@@ -3,7 +3,7 @@ import { ArtifactWorkspace } from './components/ArtifactWorkspace'
 import { SitePicker } from './components/SitePicker'
 import { discoverSiteIndexes, IndexLoadError, loadSiteIndex } from './data/indexes'
 import type { SiteIndex } from './domain/index'
-import { isThemeMode, resolveTheme, toggleThemeMode } from './domain/theme'
+import { isThemeMode, resolveTheme } from './domain/theme'
 import type { ResolvedTheme, ThemeMode } from './domain/theme'
 import { parseRoute, type AppRoute } from './routing'
 
@@ -68,16 +68,12 @@ function useTheme() {
     }
   }, [theme, themeMode])
 
-  const toggleTheme = useCallback(() => {
-    setThemeMode((current) => toggleThemeMode(current, systemTheme))
-  }, [systemTheme])
-
-  return { themeMode, theme, toggleTheme, setThemeMode }
+  return { themeMode, theme, setThemeMode }
 }
 
 function App() {
   const { route, pathname, hash, navigate } = useLocation()
-  const { themeMode, theme, toggleTheme, setThemeMode } = useTheme()
+  const { themeMode, theme, setThemeMode } = useTheme()
   const [catalog, setCatalog] = useState<LoadingState<SiteIndex[]>>({ status: 'loading' })
 
   useEffect(() => {
@@ -113,7 +109,6 @@ function App() {
       navigate={navigate}
       themeMode={themeMode}
       theme={theme}
-      onToggleTheme={toggleTheme}
       onSetThemeMode={setThemeMode}
     />
   )
@@ -128,7 +123,6 @@ function SitePage({
   navigate,
   themeMode,
   theme,
-  onToggleTheme,
   onSetThemeMode,
 }: {
   route: Extract<AppRoute, { kind: 'site' }>
@@ -139,7 +133,6 @@ function SitePage({
   navigate: (href: string) => void
   themeMode: ThemeMode
   theme: ResolvedTheme
-  onToggleTheme: () => void
   onSetThemeMode: (mode: ThemeMode) => void
 }) {
   const [indexState, setIndexState] = useState<LoadingState<SiteIndex>>({ status: 'loading' })
@@ -178,7 +171,6 @@ function SitePage({
       navigate={navigate}
       themeMode={themeMode}
       theme={theme}
-      onToggleTheme={onToggleTheme}
       onSetThemeMode={onSetThemeMode}
       index={indexState.data}
     />

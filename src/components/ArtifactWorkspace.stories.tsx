@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ArtifactWorkspace } from './ArtifactWorkspace'
 import { parseRoute, type AppRoute } from '../routing'
 import { deepExpandedPaths, deepSreIndex, storyIndexes } from '../stories/fixtures'
-import { resolveTheme, toggleThemeMode } from '../domain/theme'
+import { resolveTheme } from '../domain/theme'
 import type { ThemeMode } from '../domain/theme'
 
 const indexes = storyIndexes
@@ -62,7 +62,6 @@ function WorkspaceStory({ view, theme, initialSidebarOpen }: WorkspaceStoryArgs)
       navigate={navigate}
       themeMode={activeThemeMode}
       theme={activeTheme}
-      onToggleTheme={() => setActiveThemeMode((current) => toggleThemeMode(current, systemTheme))}
       onSetThemeMode={setActiveThemeMode}
       index={index}
       initialExpandedPaths={deepExpandedPaths}

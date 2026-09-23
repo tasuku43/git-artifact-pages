@@ -115,6 +115,17 @@
         { "level": 2, "text": "What happened?", "id": "details" },
         { "level": 2, "text": "Impact and response", "id": "impact" }
       ]
+    },
+    {
+      "id": "tests/color-scheme-response",
+      "title": "Color scheme response fixture",
+      "path": "tests/color-scheme-response",
+      "filename": "index.html",
+      "artifactUrl": "/_artifacts/showcase/tests/color-scheme-response/index.html",
+      "updatedAt": "2026-09-23T00:00:00Z",
+      "toc": [
+        { "level": 1, "text": "Color-scheme response", "id": "color-scheme-response" }
+      ]
     }
   ]
 }
