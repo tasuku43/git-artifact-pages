@@ -33,7 +33,10 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/assets/css/styles.css", "body { color: navy; }\n")
 	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/assets/data.json", `{"status":"resolved"}`)
 	commitTime := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
-	commitFixture(t, repositoryRoot, "add representative artifacts", commitTime)
+	commitFixtureWithIdentities(t, repositoryRoot, "add representative artifacts", commitTime,
+		"Artifact Author", "artifact-author@example.invalid",
+		"Index Builder Committer", "index-builder-committer@example.invalid",
+	)
 	runGit(t, repositoryRoot, "remote", "add", "origin", "git@github.com:acme/knowledge.git")
 
 	generatedAt := time.Date(2026, 2, 3, 4, 5, 6, 0, time.UTC)
@@ -88,6 +91,9 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 	if architecture.UpdatedAt != commitTime.Format(time.RFC3339) {
 		t.Errorf("architecture updatedAt = %q, want %q", architecture.UpdatedAt, commitTime.Format(time.RFC3339))
 	}
+	if architecture.LastCommitter == nil || architecture.LastCommitter.Name != "Index Builder Committer" {
+		t.Errorf("architecture lastCommitter = %+v, want the Git committer (not author)", architecture.LastCommitter)
+	}
 	if len(architecture.TOC) != 1 || architecture.TOC[0] != (TOCEntry{Level: 1, Text: "Overview", ID: "overview"}) {
 		t.Errorf("architecture TOC = %+v", architecture.TOC)
 	}
@@ -114,6 +120,9 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 	}
 	if incident.UpdatedAt != commitTime.Format(time.RFC3339) {
 		t.Errorf("incident updatedAt = %q, want %q", incident.UpdatedAt, commitTime.Format(time.RFC3339))
+	}
+	if incident.LastCommitter == nil || incident.LastCommitter.Name != "Index Builder Committer" {
+		t.Errorf("incident lastCommitter = %+v, want the Git committer", incident.LastCommitter)
 	}
 
 	diagnostics := index.Artifacts[2]
@@ -175,14 +184,23 @@ func TestBuildUpdatedAtTracksUncommittedAndCommittedAssetChanges(t *testing.T) {
 		if got := artifact.UpdatedAt; got != uncommittedTime.Format(time.RFC3339) {
 			t.Errorf("uncommitted asset updatedAt for %q = %q, want %q", artifact.ID, got, uncommittedTime.Format(time.RFC3339))
 		}
+		if artifact.LastCommitter == nil || artifact.LastCommitter.Name != "Index Builder Test" {
+			t.Errorf("uncommitted artifact lastCommitter for %q = %+v, want the last committed Git identity", artifact.ID, artifact.LastCommitter)
+		}
 	}
 
 	secondCommit := time.Date(2026, 3, 3, 11, 0, 0, 0, time.UTC)
-	commitFixture(t, repositoryRoot, "update report stylesheet", secondCommit)
+	commitFixtureWithIdentities(t, repositoryRoot, "update report stylesheet", secondCommit,
+		"Stylesheet Author", "stylesheet-author@example.invalid",
+		"Stylesheet Committer", "stylesheet-committer@example.invalid",
+	)
 	index = buildAndReadIndex(t, repositoryRoot, "sre")
 	for _, artifact := range index.Artifacts {
 		if got := artifact.UpdatedAt; got != secondCommit.Format(time.RFC3339) {
 			t.Errorf("committed asset updatedAt for %q = %q, want %q", artifact.ID, got, secondCommit.Format(time.RFC3339))
+		}
+		if artifact.LastCommitter == nil || artifact.LastCommitter.Name != "Stylesheet Committer" {
+			t.Errorf("asset update lastCommitter for %q = %+v, want committer of the stylesheet change", artifact.ID, artifact.LastCommitter)
 		}
 	}
 
@@ -191,15 +209,23 @@ func TestBuildUpdatedAtTracksUncommittedAndCommittedAssetChanges(t *testing.T) {
 		t.Fatal(err)
 	}
 	thirdCommit := time.Date(2026, 3, 4, 13, 0, 0, 0, time.UTC)
-	commitFixture(t, repositoryRoot, "update only the appendix page", thirdCommit)
+	commitFixtureWithIdentities(t, repositoryRoot, "update only the appendix page", thirdCommit,
+		"Appendix Author", "appendix-author@example.invalid",
+		"Appendix Committer", "appendix-committer@example.invalid",
+	)
 	index = buildAndReadIndex(t, repositoryRoot, "sre")
 	for _, artifact := range index.Artifacts {
 		want := secondCommit
+		wantCommitter := "Stylesheet Committer"
 		if artifact.ID == "reports/latency/appendix" {
 			want = thirdCommit
+			wantCommitter = "Appendix Committer"
 		}
 		if got := artifact.UpdatedAt; got != want.Format(time.RFC3339) {
 			t.Errorf("page-specific updatedAt for %q = %q, want %q", artifact.ID, got, want.Format(time.RFC3339))
+		}
+		if artifact.LastCommitter == nil || artifact.LastCommitter.Name != wantCommitter {
+			t.Errorf("page-specific lastCommitter for %q = %+v, want %q", artifact.ID, artifact.LastCommitter, wantCommitter)
 		}
 	}
 }
@@ -358,11 +384,26 @@ func writeFixtureFile(t testing.TB, root, filename, contents string) {
 
 func commitFixture(t testing.TB, root, message string, committedAt time.Time) {
 	t.Helper()
+	commitFixtureWithIdentities(t, root, message, committedAt,
+		"Index Builder Test", "index-builder@example.invalid",
+		"Index Builder Test", "index-builder@example.invalid",
+	)
+}
+
+func commitFixtureWithIdentities(t testing.TB, root, message string, committedAt time.Time, authorName, authorEmail, committerName, committerEmail string) {
+	t.Helper()
 	runGit(t, root, "add", "--all")
-	command := exec.Command("git", "-c", "user.name=Index Builder Test", "-c", "user.email=index-builder@example.invalid", "commit", "--quiet", "-m", message)
+	command := exec.Command("git", "commit", "--quiet", "-m", message)
 	command.Dir = root
 	date := committedAt.Format(time.RFC3339)
-	command.Env = append(os.Environ(), "GIT_AUTHOR_DATE="+date, "GIT_COMMITTER_DATE="+date)
+	command.Env = append(os.Environ(),
+		"GIT_AUTHOR_NAME="+authorName,
+		"GIT_AUTHOR_EMAIL="+authorEmail,
+		"GIT_COMMITTER_NAME="+committerName,
+		"GIT_COMMITTER_EMAIL="+committerEmail,
+		"GIT_AUTHOR_DATE="+date,
+		"GIT_COMMITTER_DATE="+date,
+	)
 	if output, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("commit fixture: %v\n%s", err, output)
 	}

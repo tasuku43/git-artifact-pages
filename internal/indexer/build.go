@@ -55,14 +55,19 @@ type SiteSummary struct {
 }
 
 type ArtifactIndexEntry struct {
-	ID          string          `json:"id"`
-	Title       string          `json:"title"`
-	Path        string          `json:"path"`
-	Filename    string          `json:"filename,omitempty"`
-	ArtifactURL string          `json:"artifactUrl"`
-	UpdatedAt   string          `json:"updatedAt"`
-	Source      *ArtifactSource `json:"source,omitempty"`
-	TOC         []TOCEntry      `json:"toc,omitempty"`
+	ID            string             `json:"id"`
+	Title         string             `json:"title"`
+	Path          string             `json:"path"`
+	Filename      string             `json:"filename,omitempty"`
+	ArtifactURL   string             `json:"artifactUrl"`
+	UpdatedAt     string             `json:"updatedAt"`
+	LastCommitter *ArtifactCommitter `json:"lastCommitter,omitempty"`
+	Source        *ArtifactSource    `json:"source,omitempty"`
+	TOC           []TOCEntry         `json:"toc,omitempty"`
+}
+
+type ArtifactCommitter struct {
+	Name string `json:"name"`
 }
 
 type ArtifactSource struct {
@@ -90,6 +95,11 @@ type gitMetadata struct {
 	repository    string
 	repositoryURL string
 	ref           string
+}
+
+type artifactGitUpdate struct {
+	updatedAt     time.Time
+	lastCommitter string
 }
 
 func Build(ctx context.Context, options BuildOptions) (BuildResult, error) {
@@ -169,7 +179,7 @@ func Build(ctx context.Context, options BuildOptions) (BuildResult, error) {
 		return BuildResult{}, fmt.Errorf("resolve source path relative to Git working tree: %w", err)
 	}
 	relativeSource = filepath.ToSlash(relativeSource)
-	updatedAtByArtifact, err := artifactGitUpdates(ctx, repositoryRoot, relativeSource, artifacts)
+	gitUpdatesByArtifact, err := artifactGitUpdates(ctx, repositoryRoot, relativeSource, artifacts)
 	if err != nil {
 		return BuildResult{}, err
 	}
@@ -201,7 +211,8 @@ func Build(ctx context.Context, options BuildOptions) (BuildResult, error) {
 			artifactTitle = fallbackArtifactTitle(artifact)
 		}
 
-		updatedAt, found := updatedAtByArtifact[artifact.relative]
+		gitUpdate := gitUpdatesByArtifact[artifact.relative]
+		updatedAt, found := gitUpdate.updatedAt, !gitUpdate.updatedAt.IsZero()
 		if workingTreeTime, hasWorkingTreeUpdate := workingTreeUpdates[artifact.relative]; hasWorkingTreeUpdate && (!found || workingTreeTime.After(updatedAt)) {
 			updatedAt = workingTreeTime
 			found = true
@@ -225,6 +236,9 @@ func Build(ctx context.Context, options BuildOptions) (BuildResult, error) {
 			ArtifactURL: artifactURL(options.SiteID, artifact.fileRelative),
 			UpdatedAt:   updatedAt.UTC().Format(time.RFC3339),
 			TOC:         metadata.toc,
+		}
+		if gitUpdate.lastCommitter != "" {
+			entry.LastCommitter = &ArtifactCommitter{Name: gitUpdate.lastCommitter}
 		}
 		if gitInfo.repository != "" {
 			entry.Source = &ArtifactSource{
@@ -418,25 +432,30 @@ func normalizedText(node *html.Node) string {
 	return strings.Join(strings.Fields(text.String()), " ")
 }
 
-func artifactGitUpdates(ctx context.Context, repositoryRoot, sourcePath string, artifacts []discoveredArtifact) (map[string]time.Time, error) {
+func artifactGitUpdates(ctx context.Context, repositoryRoot, sourcePath string, artifacts []discoveredArtifact) (map[string]artifactGitUpdate, error) {
 	artifactDirectories, artifactFiles := artifactPathLookup(artifacts)
 
 	pathspec := sourcePath
 	if pathspec == "" {
 		pathspec = "."
 	}
-	output, err := exec.CommandContext(ctx, "git", "log", "-z", "--format=%ct", "--name-only", "--no-renames", "--", filepath.FromSlash(pathspec)).CombinedOutput()
+	output, err := exec.CommandContext(ctx, "git", "log", "-z", "--format=%ct%x1f%cn", "--name-only", "--no-renames", "--", filepath.FromSlash(pathspec)).CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("read Git history for source directory: %w: %s", err, strings.TrimSpace(string(output)))
 	}
 
-	latestByArtifact := make(map[string]time.Time, len(artifacts))
+	latestByArtifact := make(map[string]artifactGitUpdate, len(artifacts))
 	parts := bytes.Split(output, []byte{0})
 	var currentCommitTime time.Time
+	var currentCommitter string
 	for index, part := range parts {
 		value := string(part)
-		if seconds, parseErr := strconv.ParseInt(value, 10, 64); parseErr == nil && len(parts) > index+1 && bytes.HasPrefix(parts[index+1], []byte{'\n'}) {
-			currentCommitTime = time.Unix(seconds, 0).UTC()
+		header := bytes.Split(part, []byte{0x1f})
+		if len(header) == 2 && len(parts) > index+1 && bytes.HasPrefix(parts[index+1], []byte{'\n'}) {
+			if seconds, parseErr := strconv.ParseInt(string(header[0]), 10, 64); parseErr == nil {
+				currentCommitTime = time.Unix(seconds, 0).UTC()
+				currentCommitter = string(header[1])
+			}
 			continue
 		}
 		if currentCommitTime.IsZero() {
@@ -455,8 +474,11 @@ func artifactGitUpdates(ctx context.Context, repositoryRoot, sourcePath string, 
 			relativeFile = strings.TrimPrefix(relativeFile, prefix)
 		}
 		for _, artifactPath := range artifactPathsForFile(relativeFile, artifactDirectories, artifactFiles) {
-			if currentCommitTime.After(latestByArtifact[artifactPath]) {
-				latestByArtifact[artifactPath] = currentCommitTime
+			update := latestByArtifact[artifactPath]
+			if currentCommitTime.After(update.updatedAt) {
+				update.updatedAt = currentCommitTime
+				update.lastCommitter = currentCommitter
+				latestByArtifact[artifactPath] = update
 			}
 		}
 	}

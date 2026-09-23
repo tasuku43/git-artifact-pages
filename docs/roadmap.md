@@ -24,7 +24,7 @@ Target user experience:
 - /:site/* deep-links to an artifact.
 - Left sidebar shows a searchable/filterable artifact tree.
 - Main pane renders the selected artifact in an iframe.
-- An optional right panel switches between indexed contents and artifact details (author, update date, and source).
+- An optional right panel switches between indexed contents and artifact details (last committer, update date, and source).
 - Direct navigation and reload restore the same state.
 
 VRT is optional at this stage and should focus on the application shell rather than arbitrary artifact contents.
@@ -39,7 +39,7 @@ source repository + sourcePath
 _indexes/<site>.json
 ~~~
 
-The initial Go command indexes each `.html` or `.htm` document, extracts display metadata, and computes artifact update times from Git history and working-tree changes. `index.html`/`index.htm` use their parent directory as the logical route; other documents retain their filename in storage while using an extensionless logical route. It does not copy artifact bytes or publish to a hosting provider; those files remain in their source tree for a later copy/deploy step. Explicit author attribution is omitted until its artifact-level source is defined rather than inferred from the last committer.
+The initial Go command indexes each `.html` or `.htm` document, extracts display metadata, and computes artifact update times from Git history and working-tree changes. `index.html`/`index.htm` use their parent directory as the logical route; other documents retain their filename in storage while using an extensionless logical route. It records the Git committer name for the latest relevant change, without resolving a GitHub account or publishing the committer email. It does not copy artifact bytes or publish to a hosting provider; those files remain in their source tree for a later copy/deploy step.
 
 The full source tree is scanned on each build. Generated 1,000-, 5,000-, and 10,000-file fixture trees are ignored by Git and used to validate whether incremental indexing is needed.
 

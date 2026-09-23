@@ -13,9 +13,9 @@
       "filename": "index.html",
       "artifactUrl": "/_artifacts/frontend/design-system/button-guidelines/index.html",
       "updatedAt": "2026-09-20T09:30:00Z",
-      "authors": [
-        { "provider": "github", "login": "frontend-team" }
-      ],
+      "lastCommitter": {
+        "name": "Frontend Team"
+      },
       "source": {
         "repository": "example/frontend",
         "repositoryUrl": "https://github.com/example/frontend",

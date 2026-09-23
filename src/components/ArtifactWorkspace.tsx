@@ -438,37 +438,22 @@ function findArtifact(index: SiteIndex, path: string) {
 }
 
 function ArtifactDetails({ artifact }: { artifact: ArtifactIndexEntry }) {
-  const authors = artifact.authors ?? []
+  const committerName = artifact.lastCommitter?.name.trim()
   const repositoryUrl = safeHttpsUrl(artifact.source?.repositoryUrl)
 
   return (
     <div className="artifact-details">
-      {authors.length > 0 ? (
-        <section className="details-authors" aria-label={authors.length === 1 ? 'Author' : 'Authors'}>
-          <p className="details-section-label">{authors.length === 1 ? 'Author' : 'Authors'}</p>
-          <div className="details-author-list">
-            {authors.map((author) => (
-              <a
-                className="details-author"
-                href={`https://github.com/${encodeURIComponent(author.login)}`}
-                key={`${author.provider}:${author.login}`}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`@${author.login} on GitHub`}
-              >
-                <span className="details-avatar" aria-hidden="true">{author.login.slice(0, 1).toUpperCase()}</span>
-                <span className="details-author-copy">
-                  <span className="details-author-login">@{author.login}</span>
-                  <span className="details-author-provider">GitHub</span>
-                </span>
-                <Icon name="external" size={12} />
-              </a>
-            ))}
+      {committerName ? (
+        <section className="details-committer" aria-label="Last commit">
+          <p className="details-section-label">Last committed by</p>
+          <div className="details-committer-card">
+            <span className="details-avatar" aria-hidden="true">{Array.from(committerName)[0]?.toUpperCase()}</span>
+            <span className="details-committer-name">{committerName}</span>
           </div>
         </section>
       ) : null}
 
-      <div className={`details-facts${authors.length > 0 ? ' has-authors' : ''}`}>
+      <div className="details-facts">
         <div className="details-fact">
           <span className="details-label">Updated</span>
           <time dateTime={artifact.updatedAt}>{formatLongDate(artifact.updatedAt)}</time>

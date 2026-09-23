@@ -158,9 +158,9 @@ Example:
       "path": "incidents/123",
       "artifactUrl": "/_artifacts/sre/incidents/123/index.html",
       "updatedAt": "2026-09-22T00:00:00Z",
-      "authors": [
-        { "provider": "github", "login": "octocat" }
-      ],
+      "lastCommitter": {
+        "name": "Octocat"
+      },
       "source": {
         "repository": "example/sre",
         "repositoryUrl": "https://github.com/example/sre",
@@ -286,9 +286,9 @@ The selected artifact is loaded from /_artifacts/* into the iframe.
 The optional right panel has two views, toggled from the workspace header:
 
 - **Contents** displays table-of-contents metadata and navigates to heading anchors in the artifact.
-- **Details** displays the artifact's author attribution, last-updated date, and source repository link/ref.
+- **Details** displays the last Git committer, last-updated date, and source repository link/ref.
 
-Both views use the same overlay panel so opening metadata does not narrow or reflow the artifact. `updatedAt` describes the artifact's last relevant source update, not the index generation time. `authors` is explicit content attribution (not an inferred last committer); each GitHub author is represented by provider and login. `source.repositoryUrl` is the canonical clickable repository URL, while `repository` remains its display name.
+Both views use the same overlay panel so opening metadata does not narrow or reflow the artifact. `updatedAt` describes the artifact's last relevant source update, not the index generation time. `lastCommitter.name` is the committer name recorded in Git for that latest relevant source change; it is not a claim about the artifact's original author or a resolved GitHub account. Commit email addresses are not included in the public index. `source.repositoryUrl` is the canonical clickable repository URL, while `repository` remains its display name.
 
 ## 9. Initial builder source model
 
@@ -387,7 +387,7 @@ Candidate metadata:
 - logical path
 - filename
 - updated time
-- explicit author attribution (GitHub account)
+- last committer recorded by Git
 - commit SHA
 - source repository
 - source repository URL
@@ -400,7 +400,7 @@ Initial title extraction may use the HTML title element.
 
 Sidecar metadata may be added later if HTML alone is insufficient.
 
-The initial local builder does not infer explicit author attribution from the last Git committer. It omits `authors` until an artifact-level attribution source is defined; commit activity still supplies `updatedAt`.
+The initial local builder records the Git committer name for the latest relevant artifact change. It does not infer a GitHub account or expose the committer email; commit activity also supplies `updatedAt`.
 
 ## 13. Local reference implementation
 

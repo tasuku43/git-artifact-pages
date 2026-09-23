@@ -1029,7 +1029,7 @@ mark {
   padding: 12px;
 }
 
-.details-authors {
+.details-committer {
   margin-bottom: 14px;
 }
 
@@ -1039,13 +1039,7 @@ mark {
   font-size: 10px;
 }
 
-.details-author-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.details-author {
+.details-committer-card {
   display: flex;
   min-width: 0;
   align-items: center;
@@ -1054,10 +1048,8 @@ mark {
   border: 1px solid var(--line-soft);
   border-radius: 8px;
   color: var(--text);
-  text-decoration: none;
 }
 
-.details-author:hover,
 .details-source-link:hover {
   background: var(--hover);
 }
@@ -1076,25 +1068,15 @@ mark {
   font-weight: 600;
 }
 
-.details-author-copy {
-  display: flex;
+.details-committer-name {
   min-width: 0;
   flex: 1;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.details-author-login {
   overflow: hidden;
   color: var(--text);
   font-size: 11px;
+  font-weight: 550;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.details-author-provider {
-  color: var(--text-tertiary);
-  font-size: 9px;
 }
 
 .details-facts {
