@@ -1,0 +1,22 @@
+@import url("./tokens.css");
+
+body {
+  margin: 0;
+  color: var(--artifact-ink);
+  background-color: var(--artifact-canvas);
+  background-image: url("../images/brand-mark.svg");
+  background-repeat: no-repeat;
+  background-position: right 24px top 24px;
+  font-family: system-ui, sans-serif;
+}
+
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 32px 96px;
+}
+
+h1,
+h2 {
+  scroll-margin-top: 24px;
+}

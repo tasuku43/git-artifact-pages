@@ -206,7 +206,9 @@ The platform does not define "static artifact" by file extension. HTML may depen
 
 The publisher therefore works on declared source paths / mounts, not on a hard-coded extension allowlist.
 
-Relative resources should work naturally because artifact directory structure is preserved in the storage projection.
+Relative resources should work naturally because artifact directory structure is preserved in the storage projection. Resolve ordinary HTML references from the artifact document URL, CSS `url()` references from the stylesheet URL, and module imports from the importing module URL.
+
+Artifact-owned resources should normally use relative URLs that stay within their artifact directory. A root-relative URL such as `/assets/report.css` starts at the origin root and does not retain the `/_artifacts/<site>/...` namespace; enough `../` segments can also leave the artifact tree. Sites may contain identical relative paths and filenames; while references stay within their artifact directories, their full URLs remain distinct because each site's tree has its own prefix. Missing artifact resources should return a real 404, not the SPA fallback document.
 
 ## 7. Artifact viewer
 
@@ -222,7 +224,7 @@ Reasons:
 
 The iframe intentionally has no `sandbox` attribute. Publishing an artifact is the trust boundary: published HTML is treated as approved executable content and can use normal browser capabilities.
 
-Artifacts are served from the same origin as the SPA under `/_artifacts/*`. As a result, an artifact script can access the parent application and other same-origin resources; the iframe separates document structure and CSS, but it is not a security boundary. This product does not isolate hostile publishers. If private or authenticated content, or mutually untrusted publishers, become part of the product, artifact hosting must move to a separate origin and the security model must be revisited before that use case is supported.
+Artifacts are served from the same origin as the SPA under `/_artifacts/*`. As a result, an artifact script can access the parent application and other same-origin resources, including files under another site's path; the iframe separates document structure and CSS, but it is not a security boundary. Site prefixes avoid accidental URL collisions when references stay within the artifact tree; they do not block deliberate cross-site access. This product does not isolate hostile publishers. If private or authenticated content, or mutually untrusted publishers, become part of the product, artifact hosting must move to a separate origin and the security model must be revisited before that use case is supported.
 
 The right-hand table of contents should use precomputed index metadata rather than requiring the parent application to inspect the iframe DOM.
 
@@ -429,7 +431,10 @@ Important E2E flows include:
 - sidebar filter → artifact selection
 - deep-link directly to an artifact
 - reload preserves route
-- iframe loads relative artifact assets and executes published scripts
+- iframe loads nested relative artifact assets, modules, and data without crossing site prefixes
+- missing artifact resources return 404 rather than the SPA shell
+- artifact styles remain inside the iframe document
+- published scripts retain normal same-origin browser capabilities
 - TOC navigation reaches an artifact heading
 
 VRT can be introduced later for the stable application shell. Arbitrary artifact contents should not become the primary VRT responsibility.
