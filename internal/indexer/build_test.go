@@ -318,6 +318,55 @@ func BenchmarkBuildIndexFiles(b *testing.B) {
 				}
 			}
 			b.ReportMetric(float64(fileCount), "source-files/op")
+			b.ReportMetric(float64(artifactCount*2), "html-pages/op")
+		})
+	}
+}
+
+func BenchmarkBuildIndexGitHistoryPages(b *testing.B) {
+	const updateCommitCount = 50
+	for _, pageCount := range []int{500, 1_000} {
+		b.Run(fmt.Sprintf("%d-html-pages", pageCount), func(b *testing.B) {
+			repositoryRoot := initializeGitRepository(b)
+			restoreWorkingDirectory := chdirForTest(b, repositoryRoot)
+			defer restoreWorkingDirectory()
+			writeFixtureFile(b, repositoryRoot, ".gitignore", "/.local/\n")
+
+			for page := 0; page < pageCount; page++ {
+				filename := filepath.Join("artifacts", fmt.Sprintf("group-%02d", page%50), fmt.Sprintf("page-%04d", page), "index.html")
+				writeFixtureFile(b, repositoryRoot, filename, fmt.Sprintf("<title>Page %d</title><h1 id=summary>Summary %d</h1>", page, page))
+			}
+			commitFixture(b, repositoryRoot, "add synthetic HTML pages", time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC))
+
+			for revision := 0; revision < updateCommitCount; revision++ {
+				page := revision % pageCount
+				filename := filepath.Join("artifacts", fmt.Sprintf("group-%02d", page%50), fmt.Sprintf("page-%04d", page), "index.html")
+				writeFixtureFile(b, repositoryRoot, filename, fmt.Sprintf("<title>Page %d revision %d</title><h1 id=summary>Summary %d</h1>", page, revision+1, page))
+				runGit(b, repositoryRoot, "add", "--", filename)
+				committerName := fmt.Sprintf("History Committer %02d", revision%5)
+				committedAt := time.Date(2026, 5, 2, 0, 0, 0, 0, time.UTC).Add(time.Duration(revision) * time.Minute)
+				commitStagedFixtureWithIdentities(b, repositoryRoot, "update synthetic HTML page", committedAt,
+					"History Author", "history-author@example.invalid", committerName, "history-committer@example.invalid")
+			}
+
+			b.ReportAllocs()
+			b.ResetTimer()
+			for iteration := 0; iteration < b.N; iteration++ {
+				result, err := Build(context.Background(), BuildOptions{
+					SiteID:    "history-benchmark",
+					SourceDir: "artifacts",
+					OutputDir: ".local/storage",
+					Now:       func() time.Time { return time.Date(2026, 5, 3, 0, 0, 0, 0, time.UTC) },
+				})
+				if err != nil {
+					b.Fatal(err)
+				}
+				if result.ArtifactsIndexed != pageCount {
+					b.Fatalf("indexed %d HTML pages, want %d", result.ArtifactsIndexed, pageCount)
+				}
+			}
+			b.ReportMetric(float64(pageCount), "html-pages/op")
+			b.ReportMetric(float64(updateCommitCount+1), "git-commits/op")
 		})
 	}
 }
@@ -393,6 +442,11 @@ func commitFixture(t testing.TB, root, message string, committedAt time.Time) {
 func commitFixtureWithIdentities(t testing.TB, root, message string, committedAt time.Time, authorName, authorEmail, committerName, committerEmail string) {
 	t.Helper()
 	runGit(t, root, "add", "--all")
+	commitStagedFixtureWithIdentities(t, root, message, committedAt, authorName, authorEmail, committerName, committerEmail)
+}
+
+func commitStagedFixtureWithIdentities(t testing.TB, root, message string, committedAt time.Time, authorName, authorEmail, committerName, committerEmail string) {
+	t.Helper()
 	command := exec.Command("git", "commit", "--quiet", "-m", message)
 	command.Dir = root
 	date := committedAt.Format(time.RFC3339)
