@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Index metadata concepts · Git Artifact Pages</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #24272b;
+        background: #f5f6f7;
+        font-synthesis: none;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      main { width: min(1120px, calc(100% - 48px)); margin: 54px auto 80px; }
+      h1 { margin: 0; font-size: 30px; font-weight: 620; letter-spacing: -.04em; }
+      .intro { max-width: 690px; margin: 10px 0 34px; color: #646a72; font-size: 14px; line-height: 1.65; }
+      .concepts { display: grid; gap: 22px; }
+      .concept { overflow: hidden; border: 1px solid #dfe2e5; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px #17202a08; }
+      .concept-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 20px 22px 16px; }
+      .concept-heading h2 { margin: 0; font-size: 16px; font-weight: 620; }
+      .concept-heading p { margin: 5px 0 0; color: #697078; font-size: 12px; line-height: 1.5; }
+      .tag { flex: none; padding: 4px 8px; border-radius: 999px; background: #f0f1f2; color: #646a72; font-size: 10px; }
+      .workspace { margin: 0 16px 16px; overflow: hidden; border: 1px solid #e0e2e4; border-radius: 9px; background: #fff; }
+      .toolbar { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; padding: 0 14px; border-bottom: 1px solid #e7e9eb; color: #737a82; font-size: 11px; }
+      .crumbs { overflow: hidden; color: #5f6670; white-space: nowrap; text-overflow: ellipsis; }
+      .crumbs strong { color: #292d32; font-weight: 520; }
+      .crumbs span { padding: 0 7px; color: #a2a7ad; }
+      .actions { display: flex; flex: none; align-items: center; gap: 14px; }
+      .action { color: #656c74; }
+      .meta { display: flex; min-width: 0; align-items: center; gap: 9px; color: #727980; font-size: 11px; white-space: nowrap; }
+      .meta-sep { color: #c3c7cb; }
+      a { color: #315f92; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .author { color: #434b54; font-weight: 530; }
+      .mini-avatar { display: inline-grid; width: 19px; height: 19px; place-items: center; margin-right: 5px; border-radius: 50%; background: #e8edf2; color: #475665; font-size: 9px; vertical-align: middle; }
+      .document { min-height: 190px; padding: 28px clamp(22px, 6vw, 68px) 38px; }
+      .document h3 { margin: 0 0 12px; color: #272a2e; font-size: 23px; font-weight: 620; letter-spacing: -.035em; }
+      .document p { max-width: 620px; margin: 0; color: #555d65; font-size: 13px; line-height: 1.7; }
+      .context-row { display: flex; min-height: 43px; align-items: center; justify-content: space-between; gap: 16px; padding: 0 18px; border-bottom: 1px solid #eceef0; background: #fbfbfc; }
+      .context-row .meta { overflow: hidden; }
+      .source-button { flex: none; color: #46515d; font-size: 11px; }
+      .details { position: relative; }
+      .details summary { display: flex; min-height: 43px; align-items: center; justify-content: flex-end; gap: 10px; padding: 0 15px; border-bottom: 1px solid #eceef0; color: #747b82; font-size: 11px; cursor: pointer; list-style: none; }
+      .details summary::-webkit-details-marker { display: none; }
+      .details summary::after { content: "⌄"; color: #777f87; font-size: 13px; }
+      .details[open] summary::after { content: "⌃"; }
+      .details-body { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 16px; padding: 14px 18px 16px; border-bottom: 1px solid #eceef0; background: #fbfbfc; font-size: 11px; }
+      .details-label { color: #858c93; }
+      .details-value { min-width: 0; color: #444b52; overflow-wrap: anywhere; }
+      .note { padding: 0 22px 19px; color: #737a82; font-size: 11px; line-height: 1.55; }
+
+      @media (max-width: 700px) {
+        main { width: min(100% - 24px, 1120px); margin-top: 30px; }
+        .concept-heading { padding: 16px; }
+        .workspace { margin: 0 9px 9px; }
+        .toolbar { flex-wrap: wrap; padding: 10px 12px; }
+        .toolbar .meta { order: 3; width: 100%; }
+        .context-row { align-items: flex-start; flex-direction: column; justify-content: center; gap: 7px; padding: 10px 14px; }
+        .details summary { justify-content: flex-start; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Artifact attribution and source</h1>
+      <p class="intro">The index is the browser's complete metadata budget. These concepts explore how an artifact can show its last update, author, and source repository without taking over the artifact's own page.</p>
+
+      <div class="concepts">
+        <section class="concept" aria-labelledby="concept-a">
+          <div class="concept-heading">
+            <div>
+              <h2 id="concept-a">A · Inline context</h2>
+              <p>Keep all provenance visible in the existing workspace bar.</p>
+            </div>
+            <span class="tag">Most compact</span>
+          </div>
+          <div class="workspace">
+            <div class="toolbar">
+              <div class="crumbs">incidents <span>/</span> checkout <span>/</span> <strong>latency-review</strong></div>
+              <div class="meta">
+                <time datetime="2026-09-22">Updated Sep 22</time><span class="meta-sep">·</span>
+                <a class="author" href="https://github.com/maya-chen"><span class="mini-avatar">M</span>@maya-chen</a><span class="meta-sep">·</span>
+                <a href="https://github.com/acme/sre-artifacts">acme/sre-artifacts ↗</a>
+              </div>
+              <div class="actions"><span class="action">Contents</span><span class="action">Copy link</span></div>
+            </div>
+            <article class="document">
+              <h3>Checkout latency review</h3>
+              <p>The artifact stays in its own document surface. Attribution and provenance remain available in the application chrome.</p>
+            </article>
+          </div>
+          <p class="note">Trade-off: the current bar is already narrow and also owns breadcrumbs and actions; long author names or repository paths can crowd it.</p>
+        </section>
+
+        <section class="concept" aria-labelledby="concept-b">
+          <div class="concept-heading">
+            <div>
+              <h2 id="concept-b">B · A dedicated context row</h2>
+              <p>Give publication metadata its own quiet line above the embedded document.</p>
+            </div>
+            <span class="tag">Clear hierarchy</span>
+          </div>
+          <div class="workspace">
+            <div class="toolbar">
+              <div class="crumbs">incidents <span>/</span> checkout <span>/</span> <strong>latency-review</strong></div>
+              <div class="actions"><span class="action">Contents</span><span class="action">Copy link</span></div>
+            </div>
+            <div class="context-row">
+              <div class="meta">
+                <time datetime="2026-09-22">Updated Sep 22, 2026</time><span class="meta-sep">·</span>
+                <span>by <a class="author" href="https://github.com/maya-chen">@maya-chen</a></span>
+              </div>
+              <a class="source-button" href="https://github.com/acme/sre-artifacts">View source · acme/sre-artifacts ↗</a>
+            </div>
+            <article class="document">
+              <h3>Checkout latency review</h3>
+              <p>The artifact remains visually independent. Its publication context is easy to scan without mixing it into the artifact's own content.</p>
+            </article>
+          </div>
+          <p class="note">Trade-off: adds a little vertical chrome, but supports longer metadata and keeps source navigation explicit.</p>
+        </section>
+
+        <section class="concept" aria-labelledby="concept-c">
+          <div class="concept-heading">
+            <div>
+              <h2 id="concept-c">C · Details on demand</h2>
+              <p>Show the update at a glance; group author and source in a disclosure.</p>
+            </div>
+            <span class="tag">Quietest chrome</span>
+          </div>
+          <div class="workspace">
+            <div class="toolbar">
+              <div class="crumbs">incidents <span>/</span> checkout <span>/</span> <strong>latency-review</strong></div>
+              <div class="meta"><time datetime="2026-09-22">Updated Sep 22</time></div>
+              <div class="actions"><span class="action">Contents</span><span class="action">Copy link</span></div>
+            </div>
+            <details class="details">
+              <summary>Artifact details</summary>
+              <div class="details-body">
+                <span class="details-label">Author</span><span class="details-value"><a href="https://github.com/maya-chen">@maya-chen ↗</a></span>
+                <span class="details-label">Source</span><span class="details-value"><a href="https://github.com/acme/sre-artifacts">github.com/acme/sre-artifacts ↗</a></span>
+                <span class="details-label">Updated</span><span class="details-value">Sep 22, 2026</span>
+              </div>
+            </details>
+            <article class="document">
+              <h3>Checkout latency review</h3>
+              <p>The application header stays minimal. The complete provenance is still available with one deliberate action.</p>
+            </article>
+          </div>
+          <p class="note">Trade-off: avoids persistent density, but the author and repository link are less discoverable and require an extra action.</p>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
