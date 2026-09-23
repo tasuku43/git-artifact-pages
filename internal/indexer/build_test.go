@@ -18,6 +18,7 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 	defer restoreWorkingDirectory()
 
 	writeFixtureFile(t, repositoryRoot, "artifacts/index.html", "<title>Site landing page</title>")
+	writeFixtureFile(t, repositoryRoot, "artifacts/overview.html", "<title>System overview</title><h1 id=summary>Overview</h1>")
 	writeFixtureFile(t, repositoryRoot, "artifacts/architecture/platform/index.html", `<!doctype html><title>Platform topology</title><h1 id="overview">Overview</h1>`)
 	incidentHTML := `<!doctype html>
 <html><head><title>Checkout latency review</title></head><body>
@@ -27,6 +28,8 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 <h3 id="follow-up">Follow-up<script>ignored text</script></h3>
 </body></html>`
 	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/index.html", incidentHTML)
+	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/diagnostics.html", `<title>Latency diagnostics</title><h1 id="signals">Signals</h1>`)
+	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/timeline.htm", `<title>Incident timeline</title><h1 id="events">Events</h1>`)
 	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/assets/css/styles.css", "body { color: navy; }\n")
 	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/assets/data.json", `{"status":"resolved"}`)
 	commitTime := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
@@ -44,11 +47,11 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Build() error = %v", err)
 	}
-	if result.FilesScanned != 5 {
-		t.Errorf("FilesScanned = %d, want 5", result.FilesScanned)
+	if result.FilesScanned != 8 {
+		t.Errorf("FilesScanned = %d, want 8", result.FilesScanned)
 	}
-	if result.ArtifactsIndexed != 2 {
-		t.Errorf("ArtifactsIndexed = %d, want 2", result.ArtifactsIndexed)
+	if result.ArtifactsIndexed != 5 {
+		t.Errorf("ArtifactsIndexed = %d, want 5", result.ArtifactsIndexed)
 	}
 	if result.OutputBytes == 0 || result.Elapsed <= 0 {
 		t.Errorf("Build() returned empty metrics: %+v", result)
@@ -68,8 +71,8 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 	if index.GeneratedAt != generatedAt.Format(time.RFC3339) {
 		t.Errorf("GeneratedAt = %q, want %q", index.GeneratedAt, generatedAt.Format(time.RFC3339))
 	}
-	if len(index.Artifacts) != 2 {
-		t.Fatalf("got %d artifacts, want 2", len(index.Artifacts))
+	if len(index.Artifacts) != 5 {
+		t.Fatalf("got %d artifacts, want 5", len(index.Artifacts))
 	}
 
 	architecture := index.Artifacts[0]
@@ -113,6 +116,29 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 		t.Errorf("incident updatedAt = %q, want %q", incident.UpdatedAt, commitTime.Format(time.RFC3339))
 	}
 
+	diagnostics := index.Artifacts[2]
+	if diagnostics.ID != "incidents/checkout-latency/diagnostics" || diagnostics.Path != diagnostics.ID || diagnostics.Title != "Latency diagnostics" {
+		t.Errorf("named HTML artifact = %+v, want diagnostics page with its HTML title", diagnostics)
+	}
+	if diagnostics.Filename != "diagnostics.html" || diagnostics.ArtifactURL != "/_artifacts/sre/incidents/checkout-latency/diagnostics.html" {
+		t.Errorf("named HTML file metadata = filename %q, URL %q", diagnostics.Filename, diagnostics.ArtifactURL)
+	}
+	if len(diagnostics.TOC) != 1 || diagnostics.TOC[0] != (TOCEntry{Level: 1, Text: "Signals", ID: "signals"}) {
+		t.Errorf("named HTML TOC = %+v", diagnostics.TOC)
+	}
+	if diagnostics.UpdatedAt != commitTime.Format(time.RFC3339) {
+		t.Errorf("diagnostics updatedAt = %q, want %q", diagnostics.UpdatedAt, commitTime.Format(time.RFC3339))
+	}
+
+	timeline := index.Artifacts[3]
+	if timeline.ID != "incidents/checkout-latency/timeline" || timeline.Filename != "timeline.htm" || timeline.ArtifactURL != "/_artifacts/sre/incidents/checkout-latency/timeline.htm" {
+		t.Errorf(".htm artifact = %+v", timeline)
+	}
+	overview := index.Artifacts[4]
+	if overview.ID != "overview" || overview.Filename != "overview.html" || overview.ArtifactURL != "/_artifacts/sre/overview.html" {
+		t.Errorf("root-level named HTML artifact = %+v", overview)
+	}
+
 	unchanged, err := os.ReadFile(filepath.Join(repositoryRoot, "artifacts/incidents/checkout-latency/index.html"))
 	if err != nil {
 		t.Fatal(err)
@@ -131,6 +157,7 @@ func TestBuildUpdatedAtTracksUncommittedAndCommittedAssetChanges(t *testing.T) {
 	defer restoreWorkingDirectory()
 
 	writeFixtureFile(t, repositoryRoot, "artifacts/reports/latency/index.html", `<title>Latency report</title><h1 id="summary">Summary</h1>`)
+	writeFixtureFile(t, repositoryRoot, "artifacts/reports/latency/appendix.html", `<title>Latency appendix</title>`)
 	assetPath := filepath.Join(repositoryRoot, "artifacts/reports/latency/assets/report.css")
 	writeFixtureFile(t, repositoryRoot, "artifacts/reports/latency/assets/report.css", "body { color: black; }\n")
 	firstCommit := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
@@ -144,15 +171,55 @@ func TestBuildUpdatedAtTracksUncommittedAndCommittedAssetChanges(t *testing.T) {
 		t.Fatal(err)
 	}
 	index := buildAndReadIndex(t, repositoryRoot, "sre")
-	if got := index.Artifacts[0].UpdatedAt; got != uncommittedTime.Format(time.RFC3339) {
-		t.Errorf("uncommitted asset updatedAt = %q, want %q", got, uncommittedTime.Format(time.RFC3339))
+	for _, artifact := range index.Artifacts {
+		if got := artifact.UpdatedAt; got != uncommittedTime.Format(time.RFC3339) {
+			t.Errorf("uncommitted asset updatedAt for %q = %q, want %q", artifact.ID, got, uncommittedTime.Format(time.RFC3339))
+		}
 	}
 
 	secondCommit := time.Date(2026, 3, 3, 11, 0, 0, 0, time.UTC)
 	commitFixture(t, repositoryRoot, "update report stylesheet", secondCommit)
 	index = buildAndReadIndex(t, repositoryRoot, "sre")
-	if got := index.Artifacts[0].UpdatedAt; got != secondCommit.Format(time.RFC3339) {
-		t.Errorf("committed asset updatedAt = %q, want %q", got, secondCommit.Format(time.RFC3339))
+	for _, artifact := range index.Artifacts {
+		if got := artifact.UpdatedAt; got != secondCommit.Format(time.RFC3339) {
+			t.Errorf("committed asset updatedAt for %q = %q, want %q", artifact.ID, got, secondCommit.Format(time.RFC3339))
+		}
+	}
+
+	appendixPath := filepath.Join(repositoryRoot, "artifacts/reports/latency/appendix.html")
+	if err := os.WriteFile(appendixPath, []byte(`<title>Updated latency appendix</title>`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	thirdCommit := time.Date(2026, 3, 4, 13, 0, 0, 0, time.UTC)
+	commitFixture(t, repositoryRoot, "update only the appendix page", thirdCommit)
+	index = buildAndReadIndex(t, repositoryRoot, "sre")
+	for _, artifact := range index.Artifacts {
+		want := secondCommit
+		if artifact.ID == "reports/latency/appendix" {
+			want = thirdCommit
+		}
+		if got := artifact.UpdatedAt; got != want.Format(time.RFC3339) {
+			t.Errorf("page-specific updatedAt for %q = %q, want %q", artifact.ID, got, want.Format(time.RFC3339))
+		}
+	}
+}
+
+func TestBuildRejectsHTMLFilesWithTheSameLogicalRoute(t *testing.T) {
+	repositoryRoot := initializeGitRepository(t)
+	restoreWorkingDirectory := chdirForTest(t, repositoryRoot)
+	defer restoreWorkingDirectory()
+
+	writeFixtureFile(t, repositoryRoot, "artifacts/reports.html", `<title>Flat report</title>`)
+	writeFixtureFile(t, repositoryRoot, "artifacts/reports/index.html", `<title>Nested report</title>`)
+	commitFixture(t, repositoryRoot, "add colliding reports", time.Date(2026, 3, 5, 12, 0, 0, 0, time.UTC))
+
+	_, err := Build(context.Background(), BuildOptions{
+		SiteID:    "sre",
+		SourceDir: "artifacts",
+		OutputDir: ".local/storage",
+	})
+	if err == nil || !strings.Contains(err.Error(), `same artifact route "reports"`) {
+		t.Fatalf("Build() error = %v, want a duplicate logical-route error", err)
 	}
 }
 
@@ -198,7 +265,8 @@ func BenchmarkBuildIndexFiles(b *testing.B) {
 			for artifact := 0; artifact < artifactCount; artifact++ {
 				artifactPath := filepath.Join("artifacts", fmt.Sprintf("team-%02d", artifact%10), "year-2026", fmt.Sprintf("group-%02d", artifact%25), fmt.Sprintf("report-%04d", artifact))
 				writeFixtureFile(b, repositoryRoot, filepath.Join(artifactPath, "index.html"), fmt.Sprintf("<title>Report %d</title><h1 id=summary>Summary %d</h1>", artifact, artifact))
-				for asset := 1; asset < 20; asset++ {
+				writeFixtureFile(b, repositoryRoot, filepath.Join(artifactPath, "details.html"), fmt.Sprintf("<title>Report details %d</title>", artifact))
+				for asset := 1; asset < 19; asset++ {
 					writeFixtureFile(b, repositoryRoot, filepath.Join(artifactPath, "assets", "data", fmt.Sprintf("file-%02d.json", asset)), fmt.Sprintf(`{"artifact":%d,"asset":%d}`, artifact, asset))
 				}
 			}

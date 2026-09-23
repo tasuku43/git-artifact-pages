@@ -104,7 +104,7 @@ func writeIndexUsage(writer io.Writer) {
 	fmt.Fprintln(writer, "Usage:")
 	fmt.Fprintln(writer, "  git artifact index build [options]")
 	fmt.Fprintln(writer, "")
-	fmt.Fprintln(writer, "Build an index from nested artifact directories containing index.html.")
+	fmt.Fprintln(writer, "Build a site index from HTML documents in the source tree.")
 }
 
 func writeBuildUsage(writer io.Writer) {

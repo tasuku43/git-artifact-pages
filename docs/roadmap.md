@@ -39,7 +39,7 @@ source repository + sourcePath
 _indexes/<site>.json
 ~~~
 
-The initial Go command indexes nested artifact entrypoints, extracts display metadata, and computes artifact update times from Git history and working-tree changes. It does not copy artifact bytes or publish to a hosting provider; those files remain in their source tree for a later copy/deploy step. Explicit author attribution is omitted until its artifact-level source is defined rather than inferred from the last committer.
+The initial Go command indexes each `.html` or `.htm` document, extracts display metadata, and computes artifact update times from Git history and working-tree changes. `index.html`/`index.htm` use their parent directory as the logical route; other documents retain their filename in storage while using an extensionless logical route. It does not copy artifact bytes or publish to a hosting provider; those files remain in their source tree for a later copy/deploy step. Explicit author attribution is omitted until its artifact-level source is defined rather than inferred from the last committer.
 
 The full source tree is scanned on each build. Generated 1,000-, 5,000-, and 10,000-file fixture trees are ignored by Git and used to validate whether incremental indexing is needed.
 

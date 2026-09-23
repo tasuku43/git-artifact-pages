@@ -78,9 +78,12 @@ type TOCEntry struct {
 }
 
 type discoveredArtifact struct {
-	directory string
-	relative  string
-	indexHTML string
+	directory         string
+	directoryRelative string
+	relative          string
+	file              string
+	fileRelative      string
+	filename          string
 }
 
 type gitMetadata struct {
@@ -158,7 +161,7 @@ func Build(ctx context.Context, options BuildOptions) (BuildResult, error) {
 		return BuildResult{}, err
 	}
 	if len(artifacts) == 0 {
-		return BuildResult{}, fmt.Errorf("no nested index.html artifacts found in %q; the source-root index.html is treated as a site page, not an artifact", options.SourceDir)
+		return BuildResult{}, fmt.Errorf("no HTML artifacts found in %q; a source-root index.html or index.htm is treated as a site page, not an artifact", options.SourceDir)
 	}
 
 	relativeSource, err := filepath.Rel(repositoryRoot, sourcePath)
@@ -187,14 +190,15 @@ func Build(ctx context.Context, options BuildOptions) (BuildResult, error) {
 		GeneratedAt:   indexTime.UTC().Format(time.RFC3339),
 		Artifacts:     make([]ArtifactIndexEntry, 0, len(artifacts)),
 	}
+	modTimeByDirectory := make(map[string]time.Time)
 	for _, artifact := range artifacts {
-		metadata, err := readArtifactHTML(artifact.indexHTML)
+		metadata, err := readArtifactHTML(artifact.file)
 		if err != nil {
 			return BuildResult{}, fmt.Errorf("parse artifact %q: %w", artifact.relative, err)
 		}
 		artifactTitle := metadata.title
 		if artifactTitle == "" {
-			artifactTitle = humanize(path.Base(artifact.relative))
+			artifactTitle = fallbackArtifactTitle(artifact)
 		}
 
 		updatedAt, found := updatedAtByArtifact[artifact.relative]
@@ -203,9 +207,13 @@ func Build(ctx context.Context, options BuildOptions) (BuildResult, error) {
 			found = true
 		}
 		if !found {
-			updatedAt, err = latestArtifactFileModTime(artifact.directory)
-			if err != nil {
-				return BuildResult{}, fmt.Errorf("read modification time for artifact %q: %w", artifact.relative, err)
+			updatedAt, found = modTimeByDirectory[artifact.directory]
+			if !found {
+				updatedAt, err = latestArtifactFileModTime(artifact.directory)
+				if err != nil {
+					return BuildResult{}, fmt.Errorf("read modification time for artifact %q: %w", artifact.relative, err)
+				}
+				modTimeByDirectory[artifact.directory] = updatedAt
 			}
 		}
 
@@ -213,8 +221,8 @@ func Build(ctx context.Context, options BuildOptions) (BuildResult, error) {
 			ID:          artifact.relative,
 			Title:       artifactTitle,
 			Path:        artifact.relative,
-			Filename:    "index.html",
-			ArtifactURL: artifactURL(options.SiteID, artifact.relative),
+			Filename:    artifact.filename,
+			ArtifactURL: artifactURL(options.SiteID, artifact.fileRelative),
 			UpdatedAt:   updatedAt.UTC().Format(time.RFC3339),
 			TOC:         metadata.toc,
 		}
@@ -252,6 +260,7 @@ func Build(ctx context.Context, options BuildOptions) (BuildResult, error) {
 
 func discoverArtifacts(sourcePath, outputRoot string) ([]discoveredArtifact, int, error) {
 	artifacts := make([]discoveredArtifact, 0)
+	routes := make(map[string]string)
 	filesScanned := 0
 	err := filepath.WalkDir(sourcePath, func(currentPath string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -270,25 +279,40 @@ func discoverArtifacts(sourcePath, outputRoot string) ([]discoveredArtifact, int
 			return nil
 		}
 		filesScanned++
-		if entry.Name() != "index.html" {
+		if !isHTMLDocument(entry.Name()) {
 			return nil
 		}
 		if entry.Type()&os.ModeSymlink != 0 {
 			return fmt.Errorf("artifact entrypoint %q must not be a symlink", currentPath)
 		}
 
+		fileRelative, err := filepath.Rel(sourcePath, currentPath)
+		if err != nil {
+			return fmt.Errorf("resolve artifact file path %q: %w", currentPath, err)
+		}
+		fileRelative = filepath.ToSlash(fileRelative)
 		directory := filepath.Dir(currentPath)
-		if directory == sourcePath {
+		filename := entry.Name()
+		if directory == sourcePath && isIndexDocument(filename) {
 			return nil
 		}
-		relative, err := filepath.Rel(sourcePath, directory)
+		directoryRelative, err := filepath.Rel(sourcePath, directory)
 		if err != nil {
 			return fmt.Errorf("resolve artifact path %q: %w", directory, err)
 		}
+		directoryRelative = filepath.ToSlash(directoryRelative)
+		relative := artifactRoutePath(fileRelative)
+		if previousFile, exists := routes[relative]; exists {
+			return fmt.Errorf("HTML files %q and %q resolve to the same artifact route %q", previousFile, fileRelative, relative)
+		}
+		routes[relative] = fileRelative
 		artifacts = append(artifacts, discoveredArtifact{
-			directory: directory,
-			relative:  filepath.ToSlash(relative),
-			indexHTML: currentPath,
+			directory:         directory,
+			directoryRelative: directoryRelative,
+			relative:          relative,
+			file:              currentPath,
+			fileRelative:      fileRelative,
+			filename:          filename,
 		})
 		return nil
 	})
@@ -297,6 +321,39 @@ func discoverArtifacts(sourcePath, outputRoot string) ([]discoveredArtifact, int
 	}
 	sort.Slice(artifacts, func(i, j int) bool { return artifacts[i].relative < artifacts[j].relative })
 	return artifacts, filesScanned, nil
+}
+
+func isHTMLDocument(filename string) bool {
+	switch strings.ToLower(filepath.Ext(filename)) {
+	case ".html", ".htm":
+		return true
+	default:
+		return false
+	}
+}
+
+func isIndexDocument(filename string) bool {
+	return strings.EqualFold(filename, "index.html") || strings.EqualFold(filename, "index.htm")
+}
+
+func artifactRoutePath(fileRelative string) string {
+	filename := path.Base(fileRelative)
+	directory := path.Dir(fileRelative)
+	if isIndexDocument(filename) {
+		return directory
+	}
+	pageName := strings.TrimSuffix(filename, path.Ext(filename))
+	if directory == "." {
+		return pageName
+	}
+	return path.Join(directory, pageName)
+}
+
+func fallbackArtifactTitle(artifact discoveredArtifact) string {
+	if isIndexDocument(artifact.filename) {
+		return humanize(path.Base(artifact.directoryRelative))
+	}
+	return humanize(strings.TrimSuffix(artifact.filename, path.Ext(artifact.filename)))
 }
 
 type artifactHTMLMetadata struct {
@@ -362,10 +419,7 @@ func normalizedText(node *html.Node) string {
 }
 
 func artifactGitUpdates(ctx context.Context, repositoryRoot, sourcePath string, artifacts []discoveredArtifact) (map[string]time.Time, error) {
-	artifactDirectories := make(map[string]struct{}, len(artifacts))
-	for _, artifact := range artifacts {
-		artifactDirectories[artifact.relative] = struct{}{}
-	}
+	artifactDirectories, artifactFiles := artifactPathLookup(artifacts)
 
 	pathspec := sourcePath
 	if pathspec == "" {
@@ -400,29 +454,17 @@ func artifactGitUpdates(ctx context.Context, repositoryRoot, sourcePath string, 
 			}
 			relativeFile = strings.TrimPrefix(relativeFile, prefix)
 		}
-		artifactDirectory := path.Dir(relativeFile)
-		for artifactDirectory != "." && artifactDirectory != "/" {
-			if _, exists := artifactDirectories[artifactDirectory]; exists {
-				if currentCommitTime.After(latestByArtifact[artifactDirectory]) {
-					latestByArtifact[artifactDirectory] = currentCommitTime
-				}
-				break
+		for _, artifactPath := range artifactPathsForFile(relativeFile, artifactDirectories, artifactFiles) {
+			if currentCommitTime.After(latestByArtifact[artifactPath]) {
+				latestByArtifact[artifactPath] = currentCommitTime
 			}
-			parent := path.Dir(artifactDirectory)
-			if parent == artifactDirectory {
-				break
-			}
-			artifactDirectory = parent
 		}
 	}
 	return latestByArtifact, nil
 }
 
 func artifactWorkingTreeUpdates(ctx context.Context, repositoryRoot, sourcePath string, artifacts []discoveredArtifact, deletedAt time.Time) (map[string]time.Time, error) {
-	artifactDirectories := make(map[string]struct{}, len(artifacts))
-	for _, artifact := range artifacts {
-		artifactDirectories[artifact.relative] = struct{}{}
-	}
+	artifactDirectories, artifactFiles := artifactPathLookup(artifacts)
 
 	output, err := exec.CommandContext(ctx, "git", "status", "--porcelain=v1", "-z", "--untracked-files=all", "--no-renames", "--", filepath.FromSlash(sourcePath)).CombinedOutput()
 	if err != nil {
@@ -443,8 +485,8 @@ func artifactWorkingTreeUpdates(ctx context.Context, repositoryRoot, sourcePath 
 			}
 			file = strings.TrimPrefix(file, prefix)
 		}
-		artifactDirectory := artifactDirectoryForFile(file, artifactDirectories)
-		if artifactDirectory == "" {
+		artifactPaths := artifactPathsForFile(file, artifactDirectories, artifactFiles)
+		if len(artifactPaths) == 0 {
 			continue
 		}
 
@@ -453,18 +495,33 @@ func artifactWorkingTreeUpdates(ctx context.Context, repositoryRoot, sourcePath 
 		if info, statErr := os.Stat(filePath); statErr == nil {
 			updatedAt = info.ModTime()
 		}
-		if updatedAt.After(latestByArtifact[artifactDirectory]) {
-			latestByArtifact[artifactDirectory] = updatedAt
+		for _, artifactPath := range artifactPaths {
+			if updatedAt.After(latestByArtifact[artifactPath]) {
+				latestByArtifact[artifactPath] = updatedAt
+			}
 		}
 	}
 	return latestByArtifact, nil
 }
 
-func artifactDirectoryForFile(relativeFile string, artifactDirectories map[string]struct{}) string {
+func artifactPathLookup(artifacts []discoveredArtifact) (map[string][]string, map[string]string) {
+	byDirectory := make(map[string][]string, len(artifacts))
+	byFile := make(map[string]string, len(artifacts))
+	for _, artifact := range artifacts {
+		byDirectory[artifact.directoryRelative] = append(byDirectory[artifact.directoryRelative], artifact.relative)
+		byFile[artifact.fileRelative] = artifact.relative
+	}
+	return byDirectory, byFile
+}
+
+func artifactPathsForFile(relativeFile string, artifactDirectories map[string][]string, artifactFiles map[string]string) []string {
+	if artifactPath, exists := artifactFiles[relativeFile]; exists {
+		return []string{artifactPath}
+	}
 	directory := path.Dir(relativeFile)
 	for directory != "." && directory != "/" {
-		if _, exists := artifactDirectories[directory]; exists {
-			return directory
+		if artifactPaths, exists := artifactDirectories[directory]; exists {
+			return artifactPaths
 		}
 		parent := path.Dir(directory)
 		if parent == directory {
@@ -472,7 +529,10 @@ func artifactDirectoryForFile(relativeFile string, artifactDirectories map[strin
 		}
 		directory = parent
 	}
-	return ""
+	if artifactPaths, exists := artifactDirectories["."]; exists {
+		return artifactPaths
+	}
+	return nil
 }
 
 func latestArtifactFileModTime(directory string) (time.Time, error) {
@@ -586,7 +646,7 @@ func artifactURL(siteID, artifactPath string) string {
 	for _, segment := range strings.Split(artifactPath, "/") {
 		segments = append(segments, url.PathEscape(segment))
 	}
-	return "/" + strings.Join(segments, "/") + "/index.html"
+	return "/" + strings.Join(segments, "/")
 }
 
 func humanize(value string) string {

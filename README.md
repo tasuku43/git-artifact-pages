@@ -80,7 +80,7 @@ The command builds the SPA first, starts an isolated Compose nginx service on po
 
 ## Local index builder prototype
 
-The Go builder creates one site's index from nested artifact directories in a Git working tree. It scans the source on each build and writes only the index; it does not copy artifact files or publish them to a hosting provider.
+The Go builder creates one site's index from `.html` and `.htm` documents in a Git working tree. Each HTML document becomes an artifact; `index.html` and `index.htm` use their parent directory as the logical route, while other filenames become routes without their extension. The index retains each document's actual filename and storage URL. It scans the source on each build and writes only the index; it does not copy artifact files or publish them to a hosting provider.
 
 Requires Go 1.26 or newer.
 
@@ -92,9 +92,9 @@ go run ./cmd/git-artifact index build \
   --out .local/storage
 ~~~
 
-This writes `.local/storage/_indexes/sre.json`. The source tree is left untouched, and the repository's relative artifact paths are retained in the index. The initial builder expects one repository source per site.
+This writes `.local/storage/_indexes/sre.json`. The source tree is left untouched, and every indexed page points to its original file under the source-relative artifact path. The initial builder expects one repository source per site.
 
-Run the Go tests and the benchmark with generated, Git-ignored fixture trees at 1,000, 5,000, and 10,000 files:
+Run the Go tests and the benchmark with generated, Git-ignored fixture trees at 1,000, 5,000, and 10,000 files. Each synthetic artifact includes both `index.html` and a separately indexed `details.html` page:
 
 ~~~sh
 go test ./...

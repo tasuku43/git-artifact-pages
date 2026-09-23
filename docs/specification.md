@@ -177,6 +177,8 @@ Example:
 
 The exact schema will mature with implementation. The important public contract is one index per site.
 
+The initial builder indexes `.html` and `.htm` documents as individual artifacts. A document named `index.html` or `index.htm` uses its containing directory as its logical route; other HTML filenames use their basename without the extension. `filename` and `artifactUrl` retain the actual source filename. Two documents that resolve to the same logical route are rejected rather than silently shadowing one another.
+
 The index should eventually contain enough information to support:
 
 - recent artifacts
