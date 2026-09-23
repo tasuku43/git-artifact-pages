@@ -54,6 +54,16 @@ npm run build
 npm run preview
 ~~~
 
+Package the built application plane for a separate installation repository with:
+
+~~~sh
+npm run package:web -- --version local-test-1
+~~~
+
+This creates a version-labelled `artifact-pages-web-*.tar.gz` archive, a SHA-256 checksum, and a release manifest under `.local/releases/`. The archive contains only the deployable SPA files (`index.html` and `assets/`) at its root; site indexes and artifact files remain a separate content plane. The version is an explicit label for local integration testing; a public release/versioning policy has not been set yet.
+
+`artifact-pages-example` can install this archive and serve the extracted app bundle through the existing local nginx/E2E setup by setting `WEB_ROOT` to its installation directory.
+
 Build both the application and the Storybook catalog with:
 
 ~~~sh

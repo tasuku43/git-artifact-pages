@@ -47,6 +47,7 @@ try {
   const env = {
     COMPOSE_PROJECT_NAME: projectName,
     WEB_PORT: port,
+    WEB_ROOT: process.env.WEB_ROOT ?? './dist',
   }
   const startStatus = run('docker', ['compose', '-p', projectName, 'up', '--detach'], env)
 

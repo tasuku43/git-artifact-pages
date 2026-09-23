@@ -4,6 +4,6 @@ services:
     ports:
       - "${WEB_PORT:-4173}:80"
     volumes:
-      - ./dist:/usr/share/nginx/html:ro
+      - ${WEB_ROOT:-./dist}:/usr/share/nginx/html:ro
       - ./fixtures/storage:/usr/share/nginx/storage:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro

@@ -8,6 +8,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "build": "tsc -b && vite build",
+    "package:web": "npm run build && node scripts/package-web-release.mjs",
     "preview": "vite preview",
     "serve:local": "npm run build && docker compose up",
     "pretest:e2e": "npm run build",
