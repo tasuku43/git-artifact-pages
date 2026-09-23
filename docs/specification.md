@@ -224,7 +224,11 @@ Reasons:
 
 The iframe intentionally has no `sandbox` attribute. Publishing an artifact is the trust boundary: published HTML is treated as approved executable content and can use normal browser capabilities.
 
-Artifacts are served from the same origin as the SPA under `/_artifacts/*`. As a result, an artifact script can access the parent application and other same-origin resources, including files under another site's path; the iframe separates document structure and CSS, but it is not a security boundary. Site prefixes avoid accidental URL collisions when references stay within the artifact tree; they do not block deliberate cross-site access. This product does not isolate hostile publishers. If private or authenticated content, or mutually untrusted publishers, become part of the product, artifact hosting must move to a separate origin and the security model must be revisited before that use case is supported.
+The hosting layer sends an enforced Content Security Policy that limits artifact resource loads to the current logical site's `/_artifacts/<site>/` path; local nginx demonstrates this contract. Inline scripts, styles, and eval remain allowed because published artifacts are trusted, but network resources must stay under that site prefix. Do not use `'self'` as the only source: all logical sites share one origin. External origins and other logical sites are blocked by default; additional sources should be added only when a published use case requires them.
+
+CSP path matching does not constrain a same-origin redirect target. Artifact resources should therefore be served directly without redirects across site prefixes; any future hosting adapter must preserve both the policy and that serving behavior.
+
+Artifacts are served from the same origin as the SPA under `/_artifacts/*`. The path-scoped policy limits resource loads initiated by the artifact document, but it is not a security boundary: an artifact script can still access the parent application and other same-origin resources. This product trusts published artifacts rather than isolating hostile publishers. If private or authenticated content, or mutually untrusted publishers, become part of the product, artifact hosting must move to a separate origin and the security model must be revisited before that use case is supported.
 
 The right-hand table of contents should use precomputed index metadata rather than requiring the parent application to inspect the iframe DOM.
 
@@ -432,6 +436,7 @@ Important E2E flows include:
 - deep-link directly to an artifact
 - reload preserves route
 - iframe loads nested relative artifact assets, modules, and data without crossing site prefixes
+- CSP blocks requests to another logical site's artifact paths and external origins by default
 - missing artifact resources return 404 rather than the SPA shell
 - artifact styles remain inside the iframe document
 - published scripts retain normal same-origin browser capabilities

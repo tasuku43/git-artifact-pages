@@ -26,6 +26,9 @@ test('multi-file artifacts stay in their site namespace when relative asset path
 
   const sreAssetPaths = artifactAssetPaths('sre', 'incidents/checkout-latency')
   const sreAssetResponses = waitForResponses(page, sreAssetPaths)
+  const sreDocumentResponse = page.waitForResponse((response) => {
+    return new URL(response.url()).pathname === '/_artifacts/sre/incidents/checkout-latency/index.html'
+  })
   const navigationResponse = await page.goto('/sre/incidents/checkout-latency')
   expect(navigationResponse?.status()).toBe(200)
   expect(navigationResponse?.headers()['content-type']).toContain('text/html')
@@ -37,10 +40,46 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   await expect(artifact.getByRole('status')).toHaveText('SRE incident bundle loaded')
   await expect(artifact.locator('body')).toHaveAttribute('data-artifact-site', 'sre')
   await expect(artifact.locator('body')).toHaveCSS('color', 'rgb(31, 41, 55)')
+  const sreCsp = (await sreDocumentResponse).headers()['content-security-policy']
+  expect(sreCsp).toContain('/_artifacts/sre/')
+  expect(sreCsp).not.toContain("'self'")
+  expect(sreCsp).not.toContain('/_artifacts/frontend/')
   expect((await Promise.all(sreAssetResponses)).every((response) => response.status() === 200)).toBeTruthy()
   expect(artifactResponsePaths.length).toBeGreaterThanOrEqual(sreAssetPaths.length)
   expect(artifactResponsePaths.every((path) => path.startsWith('/_artifacts/sre/'))).toBeTruthy()
   await expect(page.locator('body')).toHaveCSS('color', 'rgb(17, 20, 22)')
+
+  const crossSiteFetch = await artifact.locator('body').evaluate(async () => {
+    try {
+      const response = await fetch('/_artifacts/frontend/design-system/button-guidelines/assets/data/details.json')
+      return response.status
+    } catch {
+      return 'blocked'
+    }
+  })
+  expect(crossSiteFetch).toBe('blocked')
+
+  const crossSiteStylesheet = await artifact.locator('body').evaluate((body) => new Promise<string>((resolve) => {
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = '/_artifacts/frontend/design-system/button-guidelines/assets/css/styles.css'
+    link.onload = () => resolve('loaded')
+    link.onerror = () => resolve('blocked')
+    body.ownerDocument.head.append(link)
+  }))
+  expect(crossSiteStylesheet).toBe('blocked')
+
+  const crossSiteScript = await artifact.locator('body').evaluate((body) => new Promise<string>((resolve) => {
+    const script = document.createElement('script')
+    script.type = 'module'
+    script.src = '/_artifacts/frontend/design-system/button-guidelines/assets/js/main.js'
+    script.onload = () => resolve('loaded')
+    script.onerror = () => resolve('blocked')
+    body.ownerDocument.head.append(script)
+  }))
+  expect(crossSiteScript).toBe('blocked')
+  await expect(artifact.locator('body')).toHaveAttribute('data-artifact-site', 'sre')
+  expect(artifactResponsePaths.every((path) => path.startsWith('/_artifacts/sre/'))).toBeTruthy()
 
   const breadcrumb = page.getByRole('navigation', { name: 'Artifact path' })
   await expect(breadcrumb).toContainText('incidents')
@@ -64,6 +103,9 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   })
   const frontendAssetPaths = artifactAssetPaths('frontend', 'design-system/button-guidelines')
   const frontendAssetResponses = waitForResponses(frontendPage, frontendAssetPaths)
+  const frontendDocumentResponse = frontendPage.waitForResponse((response) => {
+    return new URL(response.url()).pathname === '/_artifacts/frontend/design-system/button-guidelines/index.html'
+  })
   await frontendPage.goto('/frontend/design-system/button-guidelines')
 
   const frontend = frontendPage.frameLocator('iframe[title="Button guidelines"]')
@@ -71,10 +113,35 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   await expect(frontend.getByRole('status')).toHaveText('Frontend guideline bundle loaded')
   await expect(frontend.locator('body')).toHaveAttribute('data-artifact-site', 'frontend')
   await expect(frontend.locator('body')).toHaveCSS('color', 'rgb(76, 29, 149)')
+  const frontendCsp = (await frontendDocumentResponse).headers()['content-security-policy']
+  expect(frontendCsp).toContain('/_artifacts/frontend/')
+  expect(frontendCsp).not.toContain("'self'")
+  expect(frontendCsp).not.toContain('/_artifacts/sre/')
   expect((await Promise.all(frontendAssetResponses)).every((response) => response.status() === 200)).toBeTruthy()
   expect(frontendResponsePaths.length).toBeGreaterThanOrEqual(frontendAssetPaths.length)
   expect(frontendResponsePaths.every((path) => path.startsWith('/_artifacts/frontend/'))).toBeTruthy()
   await expect(frontendPage.locator('body')).toHaveCSS('color', 'rgb(17, 20, 22)')
+
+  let externalRequestReachedServer = false
+  await frontendPage.route('https://example.invalid/**', async (route) => {
+    externalRequestReachedServer = true
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body: '{}',
+    })
+  })
+  const externalFetch = await frontend.locator('body').evaluate(async () => {
+    try {
+      await fetch('https://example.invalid/data.json')
+      return 'loaded'
+    } catch {
+      return 'blocked'
+    }
+  })
+  expect(externalFetch).toBe('blocked')
+  expect(externalRequestReachedServer).toBeFalsy()
 
   const missingAsset = await frontendPage.request.get('/_artifacts/frontend/design-system/button-guidelines/assets/data/missing.json')
   expect(missingAsset.status()).toBe(404)
