@@ -78,11 +78,34 @@ npm run test:e2e
 
 The command builds the SPA first, starts an isolated Compose nginx service on port `4174`, and removes that test service when finished. The regular local service on `4173` is left untouched. Docker Compose and the Playwright Chromium browser are required. Tests cover site discovery, deep-link/reload behavior, relative artifact assets, and the collapsed navigation rail.
 
+## Local index builder prototype
+
+The Go builder creates one site's index from nested artifact directories in a Git working tree. It scans the source on each build and writes only the index; it does not copy artifact files or publish them to a hosting provider.
+
+Requires Go 1.26 or newer.
+
+~~~sh
+go run ./cmd/git-artifact index build \
+  --site sre \
+  --site-title SRE \
+  --source fixtures/storage/_artifacts/sre \
+  --out .local/storage
+~~~
+
+This writes `.local/storage/_indexes/sre.json`. The source tree is left untouched, and the repository's relative artifact paths are retained in the index. The initial builder expects one repository source per site.
+
+Run the Go tests and the benchmark with generated, Git-ignored fixture trees at 1,000, 5,000, and 10,000 files:
+
+~~~sh
+go test ./...
+go test ./internal/indexer -run '^$' -bench=BenchmarkBuildIndexFiles -benchtime=5x -benchmem
+~~~
+
 ## Core ideas
 
 - Git-managed artifacts remain versioned with the work that produced them.
 - A site is a logical namespace such as sre or frontend.
-- Multiple repositories may publish into one site as long as their mounted paths do not overlap.
+- The initial index builder maps one repository source directory to one site; merging multiple repositories into a site is deferred.
 - /_artifacts/* contains published static files.
 - /_indexes/<site>.json contains the searchable/browsable projection for a site.
 - The SPA is stable infrastructure; artifact content and site indexes change independently.

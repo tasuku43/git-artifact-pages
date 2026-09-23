@@ -52,7 +52,7 @@ A site is a logical destination such as sre or frontend. Repository boundaries d
 
 ### Explicit ownership
 
-When multiple repositories contribute to one site, each publisher owns a non-overlapping mount path. Namespace collision is a configuration error.
+If multiple repositories are supported later, each publisher must own a non-overlapping mount path. Namespace collision is a configuration error. Multi-repository contribution is not required for the initial builder; it consumes one repository source per site.
 
 ### Infrastructure is an adapter
 

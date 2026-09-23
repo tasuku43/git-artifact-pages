@@ -79,7 +79,7 @@ Therefore /sre/incidents/123 means:
 - site: sre
 - logical artifact route: incidents/123
 
-A site is not a repository. Multiple repositories may contribute to the same site.
+A site is a logical destination, not a repository identity. The initial builder maps one repository source directory to one site. Combining sources from multiple repositories is deferred until a concrete use case requires it.
 
 ## 4. User-facing routing
 
@@ -288,43 +288,37 @@ The optional right panel has two views, toggled from the workspace header:
 
 Both views use the same overlay panel so opening metadata does not narrow or reflow the artifact. `updatedAt` describes the artifact's last relevant source update, not the index generation time. `authors` is explicit content attribution (not an inferred last committer); each GitHub author is represented by provider and login. `source.repositoryUrl` is the canonical clickable repository URL, while `repository` remains its display name.
 
-## 9. Source and mount model
+## 9. Initial builder source model
 
-A publish source is conceptually:
+The initial index build consumes one source per site:
 
 ~~~text
 (repository, ref, sourcePath)
 ~~~
 
-and is assigned a destination:
-
-~~~text
-(site, mountPath)
-~~~
-
-Example:
+Artifact paths and IDs are relative to `sourcePath`; repository identity is recorded as metadata, not exposed in the site's public route. For example:
 
 ~~~yaml
 site: sre
 repository: company/sre-monorepo
 ref: main
 sourcePath: docs/artifacts
-mountPath: /incidents
 ~~~
 
-Artifact-only repositories are represented naturally:
+An artifact-only repository can use its root as the source:
 
 ~~~yaml
 site: sre
 repository: company/sre-artifacts
 ref: main
 sourcePath: .
-mountPath: /reports
 ~~~
 
-## 10. Multiple repositories in one site
+There is no mount-path merge in the initial builder. A later publisher may add explicit mounting if a validated use case needs it.
 
-This is a required design capability.
+## 10. Multiple repositories in one site (deferred)
+
+This is a possible future capability, not an MVP requirement. The initial builder does not merge multiple repositories or require a registry to allocate mount paths.
 
 Example:
 
@@ -336,7 +330,7 @@ site: sre
 /runbooks      ← company/operations
 ~~~
 
-The registry must guarantee that mount paths within a site do not overlap.
+If multi-repository publishing is introduced, the registry must guarantee that mount paths within a site do not overlap.
 
 Invalid examples:
 
@@ -356,7 +350,7 @@ Parent/child overlap is rejected because a publisher using delete/sync semantics
 
 The public projection still presents one /_indexes/sre.json.
 
-How multiple publisher contributions are staged and merged into that single index is an implementation concern to solve in the publisher phase. Source-specific manifests are one possible internal mechanism, but are not required as part of the browser-facing contract.
+How multiple publisher contributions might be staged and merged into that single index is a future implementation concern. Source-specific manifests are one possible internal mechanism, but are not required by the browser-facing contract or the initial builder.
 
 ## 11. Registry
 
@@ -403,6 +397,8 @@ Candidate metadata:
 Initial title extraction may use the HTML title element.
 
 Sidecar metadata may be added later if HTML alone is insufficient.
+
+The initial local builder does not infer explicit author attribution from the last Git committer. It omits `authors` until an artifact-level attribution source is defined; commit activity still supplies `updatedAt`.
 
 ## 13. Local reference implementation
 
@@ -564,11 +560,9 @@ The served system is a static projection.
 
 The SPA application plane and artifact content plane are independently deployable.
 
-A site is a logical namespace, not a repository.
+A site is a logical namespace, not a repository identity.
 
-Multiple repositories may contribute to one site.
-
-Mount paths within one site must not overlap.
+The initial builder maps one repository source to each site; multi-repository merging is deferred. If it is introduced later, mount paths within a site must not overlap.
 
 The browser consumes per-site indexes discovered through the local `/_indexes/` listing; it does not use browser-side object-storage ListObjects APIs.
 

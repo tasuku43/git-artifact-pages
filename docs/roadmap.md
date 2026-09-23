@@ -29,16 +29,21 @@ Target user experience:
 
 VRT is optional at this stage and should focus on the application shell rather than arbitrary artifact contents.
 
-## Phase 2 — Projection builder / publisher
+## Phase 2 — Local projection builder
 
-Turn source files into the storage contract:
+Build the per-site index from one Git repository source directory:
 
 ~~~text
+source repository + sourcePath
+        ↓
 _indexes/<site>.json
-_artifacts/<site>/<mount>/...
 ~~~
 
-Add registry validation, metadata extraction, mount ownership, and multi-repository contribution to a single site.
+The initial Go command indexes nested artifact entrypoints, extracts display metadata, and computes artifact update times from Git history and working-tree changes. It does not copy artifact bytes or publish to a hosting provider; those files remain in their source tree for a later copy/deploy step. Explicit author attribution is omitted until its artifact-level source is defined rather than inferred from the last committer.
+
+The full source tree is scanned on each build. Generated 1,000-, 5,000-, and 10,000-file fixture trees are ignored by Git and used to validate whether incremental indexing is needed.
+
+Use one repository source per site for this milestone. Registry enforcement, mount ownership, multi-repository merging, and provider publishing are deferred until the static index contract is validated.
 
 The public contract should remain simple even if internal merge/staging mechanics evolve.
 
