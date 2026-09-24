@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Context-aware command palette — design study</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f2f4f3;
+        --paper: #fff;
+        --ink: #202624;
+        --muted: #737d79;
+        --soft: #9ca5a1;
+        --rule: #e2e7e4;
+        --accent: #426d5d;
+        --palette: #1c1e20;
+        --palette-text: #edf0ef;
+        --palette-muted: #a3aaa8;
+        --palette-soft: #747d7a;
+        --palette-rule: rgba(255,255,255,.09);
+        --palette-hover: rgba(255,255,255,.085);
+        --match: #b8e0ce;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-width: 360px; background: var(--page); color: var(--ink); }
+      button, input { font: inherit; }
+      .masthead { height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 max(22px, calc((100vw - 1280px) / 2)); border-bottom: 1px solid var(--rule); background: rgba(255,255,255,.72); }
+      .brand { display: flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 650; }
+      .brand-mark { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; background: #273c34; color: #edf4f0; font-family: Georgia,serif; font-size: 14px; }
+      .eyebrow, .label { color: var(--muted); font-size: 10px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; }
+      main { width: min(1280px, calc(100% - 44px)); margin: 0 auto; padding: 39px 0 48px; }
+      .intro { max-width: 810px; margin-bottom: 22px; }
+      .eyebrow { margin: 0 0 10px; color: var(--accent); }
+      h1 { margin: 0; font-size: clamp(29px, 4vw, 40px); font-weight: 560; letter-spacing: -.045em; line-height: 1.12; }
+      .dek { max-width: 735px; margin: 12px 0 0; color: #68716d; font-size: 14px; line-height: 1.65; }
+      .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 25px 0 14px; }
+      .context-switch, .concept-switch { display: flex; gap: 3px; padding: 3px; border: 1px solid #dfe5e1; border-radius: 8px; background: rgba(255,255,255,.55); }
+      .context-switch button, .concept-switch button { padding: 7px 10px; border: 0; border-radius: 5px; background: transparent; color: #69736e; cursor: pointer; font-size: 10px; white-space: nowrap; }
+      .context-switch button[aria-pressed="true"], .concept-switch button[aria-pressed="true"] { background: #fff; color: #263a32; box-shadow: 0 1px 3px rgba(20,35,28,.13); }
+      .toolbar .label { margin-right: 5px; }
+      .stage { position: relative; min-height: 515px; overflow: hidden; border: 1px solid #dce2de; border-radius: 12px; background: #e7ebe8; isolation: isolate; box-shadow: 0 8px 28px rgba(26,42,35,.045); }
+      .appbar { height: 43px; display: flex; align-items: center; gap: 10px; padding: 0 17px; background: #191c1d; color: #e6eae8; font-size: 11px; }
+      .appmark { width: 17px; height: 17px; display: grid; place-items: center; border-radius: 5px; background: #e8efeb; color: #263d35; font-size: 9px; font-weight: 700; }
+      .crumb { color: #89928f; font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .app-actions { margin-left: auto; color: #a5adaa; font-size: 10px; }
+      .workspace { min-height: 471px; padding: 35px clamp(22px, 6vw, 74px); background: #f8f8f6; color: #242a27; }
+      .workspace-inner { max-width: 650px; margin: 0 auto; }
+      .workspace-kicker { color: #858e89; font-size: 9px; letter-spacing: .13em; }
+      .workspace h2 { margin: 12px 0 9px; font-size: 31px; font-weight: 560; letter-spacing: -.04em; }
+      .workspace p { max-width: 510px; color: #707975; font-size: 12px; line-height: 1.65; }
+      .fake-list { display: grid; max-width: 510px; margin-top: 24px; border-top: 1px solid #e0e4e1; }
+      .fake-list div { padding: 10px 3px; border-bottom: 1px solid #e0e4e1; color: #515a55; font-size: 11px; }
+      .fake-list small { float: right; color: #9aa29e; font: 9px ui-monospace, monospace; }
+      .scrim { position: absolute; z-index: 1; inset: 43px 0 0; background: rgba(12,15,14,.42); }
+      .palette { position: absolute; z-index: 2; top: 66px; left: 50%; width: min(690px, calc(100% - 36px)); max-height: calc(100% - 87px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgba(255,255,255,.13); border-radius: 13px; background: var(--palette); color: var(--palette-text); box-shadow: 0 22px 60px rgba(0,0,0,.3); transform: translateX(-50%); }
+      .input-row { min-height: 53px; display: flex; flex: none; align-items: center; gap: 11px; padding: 0 16px; border-bottom: 1px solid var(--palette-rule); color: #89928f; }
+      .search-icon { width: 15px; height: 15px; flex: none; }
+      .input-row input { width: 100%; min-width: 0; outline: 0; border: 0; background: transparent; color: var(--palette-text); font-size: 14px; }
+      .input-row input::placeholder { color: #747d7a; }
+      .scope-context { flex: none; padding: 4px 7px; border: 1px solid rgba(255,255,255,.1); border-radius: 5px; color: #aab3af; font-size: 9px; }
+      .esc { padding: 3px 5px; border-radius: 4px; background: rgba(255,255,255,.07); color: #a0aaa7; font: 9px ui-monospace, monospace; }
+      .scope-row { display: none; align-items: center; gap: 5px; padding: 8px 12px 3px; }
+      .scope-row button { padding: 5px 8px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: #8e9894; cursor: pointer; font-size: 9px; }
+      .scope-row button[aria-pressed="true"] { border-color: rgba(255,255,255,.13); background: rgba(255,255,255,.075); color: #e0e5e2; }
+      .result-caption { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 4px; color: var(--palette-soft); font-size: 9px; }
+      .drill-path { display: none; }
+      .results { min-height: 0; overflow: auto; padding: 0 6px 7px; }
+      .section-title { padding: 9px 11px 4px; color: #7c8582; font-size: 9px; }
+      .row { min-height: 38px; display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 7px; color: #dfe4e1; }
+      .row + .row { margin-top: 1px; }
+      .row.active { background: var(--palette-hover); }
+      .row-icon { width: 16px; flex: none; color: #98a29e; text-align: center; font-size: 12px; }
+      .row-title { min-width: 0; flex: none; overflow: hidden; font-size: 11px; font-weight: 530; text-overflow: ellipsis; white-space: nowrap; }
+      .row-subtitle { min-width: 0; flex: 1; overflow: hidden; color: #89938f; font: 9px ui-monospace, SFMono-Regular, Menlo, monospace; text-overflow: ellipsis; white-space: nowrap; }
+      .row-meta { flex: none; color: #858f8b; font-size: 9px; }
+      .row-action { flex: none; color: #7b8581; font-size: 9px; }
+      .row mark { padding: 0; background: transparent; color: var(--match); font-weight: 730; }
+      .footer { min-height: 32px; display: flex; align-items: center; gap: 12px; padding: 0 13px; border-top: 1px solid var(--palette-rule); color: #828c88; font-size: 9px; }
+      .footer span { display: inline-flex; align-items: center; gap: 4px; }
+      .footer kbd { padding: 2px 4px; border-radius: 3px; background: rgba(255,255,255,.07); color: #9aa39f; font: 9px ui-monospace, monospace; }
+      .concept-notes { display: grid; grid-template-columns: 1.05fr 1fr 1fr; gap: 12px; margin-top: 13px; }
+      .note { min-height: 125px; padding: 14px 15px; border: 1px solid #e0e5e2; border-radius: 9px; background: rgba(255,255,255,.62); }
+      .note .label { color: #83908a; font-size: 9px; }
+      .note h3 { margin: 8px 0 6px; font-size: 14px; font-weight: 620; letter-spacing: -.015em; }
+      .note p { margin: 0; color: #727b77; font-size: 10px; line-height: 1.55; }
+      .principle { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; margin-top: 14px; }
+      .principle > div { padding: 12px 14px; border-left: 2px solid #a5b9ae; background: rgba(255,255,255,.42); }
+      .principle strong { display: block; color: #46514c; font-size: 10px; font-weight: 650; }
+      .principle span { display: block; margin-top: 4px; color: #838c88; font-size: 9px; line-height: 1.45; }
+      .concept-b .scope-row { display: flex; }
+      .concept-b .result-caption { padding-top: 5px; }
+      .concept-c .input-row { border-bottom: 0; }
+      .concept-c .drill-path { min-height: 34px; display: flex; align-items: center; gap: 7px; padding: 0 16px; border-bottom: 1px solid var(--palette-rule); color: #a9b1ae; font-size: 9px; }
+      .concept-c .drill-path b { color: #e0e5e2; font-weight: 570; }
+      .concept-c .scope-context { display: none; }
+      .concept-c .result-caption { color: #95a09b; }
+      @media (max-width: 760px) {
+        main { width: calc(100% - 28px); padding-top: 28px; }
+        .toolbar { align-items: flex-start; flex-direction: column; }
+        .stage { min-height: 475px; }
+        .workspace { min-height: 431px; padding: 27px 18px; }
+        .workspace h2 { font-size: 26px; }
+        .concept-notes, .principle { grid-template-columns: 1fr; }
+        .note { min-height: auto; }
+      }
+      @media (max-width: 480px) {
+        .masthead { padding: 0 14px; }
+        .study-title { font-size: 8px; }
+        .context-switch, .concept-switch { width: 100%; }
+        .context-switch button, .concept-switch button { flex: 1; padding-right: 5px; padding-left: 5px; font-size: 9px; }
+        .row-subtitle { display: none; }
+        .footer { gap: 7px; padding: 0 8px; font-size: 8px; }
+        .scope-row { gap: 1px; padding-right: 6px; padding-left: 6px; }
+        .scope-row button { padding: 5px 6px; font-size: 8px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="brand"><span class="brand-mark">g</span><span>Git Artifact Pages</span></div>
+      <div class="eyebrow study-title">Product design / interaction study</div>
+    </header>
+    <main>
+      <section class="intro">
+        <p class="eyebrow">Command-K · Context-aware search</p>
+        <h1>Let the current place set the starting point.</h1>
+        <p class="dek">The palette can keep one familiar search gesture while changing what it puts first: sites at the top level, pages inside a site, and optionally headings inside an artifact. Compare three ways to make that context visible.</p>
+      </section>
+
+      <div class="toolbar">
+        <div>
+          <span class="label">Current location</span>
+          <div class="context-switch" role="group" aria-label="Choose current location">
+            <button data-context="root" aria-pressed="true">/ · All sites</button>
+            <button data-context="site" aria-pressed="false">/sre · Site home</button>
+            <button data-context="artifact" aria-pressed="false">/sre/incidents/... · Artifact</button>
+          </div>
+        </div>
+        <div>
+          <span class="label">Behavior</span>
+          <div class="concept-switch" role="group" aria-label="Choose palette behavior">
+            <button data-concept="a" aria-pressed="true">A · Context first</button>
+            <button data-concept="b" aria-pressed="false">B · Scope switch</button>
+            <button data-concept="c" aria-pressed="false">C · Step in</button>
+          </div>
+        </div>
+      </div>
+
+      <section class="stage concept-a" id="stage" aria-label="Interactive command palette concept">
+        <div class="appbar"><span class="appmark">g</span><span>Git Artifact Pages</span><span class="crumb" id="crumb">/</span><span class="app-actions">⌘ K&nbsp;&nbsp; Search</span></div>
+        <div class="workspace">
+          <div class="workspace-inner">
+            <span class="workspace-kicker" id="workspace-kicker">SITES / INDEX</span>
+            <h2 id="workspace-title">Your sites</h2>
+            <p id="workspace-copy">Pick a site to browse its published pages. Search starts here when you press Command-K.</p>
+            <div class="fake-list" id="fake-list"></div>
+          </div>
+        </div>
+        <div class="scrim"></div>
+        <div class="palette" role="dialog" aria-label="Context-aware command palette preview">
+          <div class="input-row">
+            <svg class="search-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.8" cy="8.8" r="5.6" stroke="currentColor" stroke-width="1.5"/><path d="m13 13 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input id="query" type="text" value="" aria-label="Search query" autocomplete="off" spellcheck="false" />
+            <span class="scope-context" id="scope-context">Sites</span>
+            <span class="esc">esc</span>
+          </div>
+          <div class="scope-row" id="scope-row" role="group" aria-label="Search scope"></div>
+          <div class="drill-path" id="drill-path"></div>
+          <div class="result-caption"><span id="result-caption">Choose a site to continue</span><span id="concept-caption">Context: /</span></div>
+          <div class="results" id="results" role="listbox" aria-label="Search results"></div>
+          <div class="footer"><span><kbd>↑</kbd><kbd>↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><code>&gt;</code> commands</span><span><code>@</code> sites</span><span><code>#</code> headings</span></div>
+        </div>
+      </section>
+
+      <section class="concept-notes" aria-live="polite">
+        <article class="note"><span class="label" id="concept-id">CONCEPT A · RECOMMENDED BASE</span><h3 id="concept-title">Context first</h3><p id="concept-description">The route chooses the default. Sites at /, this site's pages inside a site, and current-artifact headings only when explicitly requested.</p></article>
+        <article class="note"><span class="label">Strength</span><h3 id="concept-strength-title">One search surface</h3><p id="concept-strength">No extra controls to learn. The active site provides a quiet scope cue; familiar prefixes remain available for alternate intent.</p></article>
+        <article class="note"><span class="label">Trade-off</span><h3 id="concept-tradeoff-title">Context must be legible</h3><p id="concept-tradeoff">People need to notice which scope is active. Keep the site name visible and provide an explicit way to switch sites.</p></article>
+      </section>
+
+      <section class="principle" aria-label="Behavioral decisions shared by the concepts">
+        <div><strong>Root: choose a site first</strong><span>Site results lead. Do not mix every site's pages into the initial list.</span></div>
+        <div><strong>Inside a site: stay local</strong><span>Site home and artifact routes search pages in the active site by default.</span></div>
+        <div><strong>Artifact route: headings are contextual</strong><span>Make current-page headings available with # or a deliberate Headings scope.</span></div>
+      </section>
+    </main>
+    <script>
+      const sites = [
+        { title: 'SRE', path: '/sre', meta: '12 pages' },
+        { title: 'Showcase', path: '/showcase', meta: '8 pages' },
+        { title: 'Frontend', path: '/frontend', meta: '6 pages' },
+      ];
+      const pages = [
+        { title: 'Checkout latency incident review', path: 'incidents/checkout/latency-review', icon: '▤' },
+        { title: 'Platform topology', path: 'architecture/platform-topology', icon: '▤' },
+        { title: 'Payment webhook backlog', path: 'incidents/2026-q3/payment-webhook-backlog', icon: '▤' },
+        { title: 'Service ownership map', path: 'architecture/service-ownership', icon: '▤' },
+      ];
+      const headings = [
+        { title: 'Summary', path: 'Heading 1', icon: '≡' },
+        { title: 'Root cause', path: 'Heading 2', icon: '≡' },
+        { title: 'Follow-up', path: 'Heading 2', icon: '≡' },
+      ];
+      const commands = [
+        { title: 'Toggle sidebar', path: '⌘ B', icon: '◫' },
+        { title: 'Toggle contents', path: '⌘ ⇧ O', icon: '≡' },
+        { title: 'Use system theme', path: 'Appearance', icon: '◐' },
+      ];
+      const concepts = {
+        a: {
+          title: 'Context first', id: 'CONCEPT A · RECOMMENDED BASE',
+          description: 'The route chooses the default. Sites at /, this site’s pages inside a site, and current-artifact headings only when explicitly requested.',
+          strengthTitle: 'One search surface', strength: 'No extra controls to learn. The active site provides a quiet scope cue; familiar prefixes remain available for alternate intent.',
+          tradeoffTitle: 'Context must be legible', tradeoff: 'People need to notice which scope is active. Keep the site name visible and provide an explicit way to switch sites.',
+        },
+        b: {
+          title: 'Scope switch', id: 'CONCEPT B · MOST EXPLICIT',
+          description: 'A small set of scope chips sits below the query. Pages, Headings, and Commands can be chosen directly; at /, Sites replaces Pages.',
+          strengthTitle: 'Intent is visible', strength: 'The user can see and change what is being searched without remembering @, >, or #.',
+          tradeoffTitle: 'More persistent chrome', tradeoff: 'Scope controls take room and may make a quick palette feel like a search form. Keep the set small and context-dependent.',
+        },
+        c: {
+          title: 'Step in', id: 'CONCEPT C · GUIDED FLOW',
+          description: 'At /, ArrowRight drills into a site’s search scope. Enter still opens the selected destination and closes the palette; Escape steps back out of the scope.',
+          strengthTitle: 'Clear transitions', strength: 'The next action is always obvious: choose a site scope, then a page. Useful when users are unfamiliar with the site structure.',
+          tradeoffTitle: 'Adds a gesture', tradeoff: 'ArrowRight is less discoverable than Enter. Keep direct site navigation on Enter and show the drill-in affordance only as a secondary action.',
+        },
+      };
+      let context = 'root';
+      let concept = 'a';
+      let activeScope = '';
+      const query = document.querySelector('#query');
+      const results = document.querySelector('#results');
+
+      function escapeHTML(value) {
+        return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+      }
+      function highlight(value, term) {
+        const safe = escapeHTML(value);
+        if (!term.trim()) return safe;
+        const escaped = term.trim().split(/\s+/).map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        const expression = new RegExp(`(${escaped.join('|')})`, 'ig');
+        return safe.replace(expression, '<mark>$1</mark>');
+      }
+      function item(title, path, icon, meta = '', active = false, term = '') {
+        return `<div class="row${active ? ' active' : ''}" role="option" aria-selected="${active}"><span class="row-icon">${icon}</span><span class="row-title">${highlight(title, term)}</span><span class="row-subtitle">${highlight(path, term)}</span><span class="row-meta">${meta}</span></div>`;
+      }
+      function currentScope() {
+        const prefix = query.value.trim()[0];
+        if (prefix === '@') return 'Sites';
+        if (prefix === '>') return 'Commands';
+        if (prefix === '#') return 'Headings';
+        if (context === 'root') return activeScope || 'Sites';
+        if (activeScope) return activeScope;
+        return 'Pages';
+      }
+      function render() {
+        const isRoot = context === 'root';
+        const isArtifact = context === 'artifact';
+        const term = query.value.replace(/^[>@#]/, '').trim();
+        const scope = currentScope();
+        const stage = document.querySelector('#stage');
+        stage.className = `stage concept-${concept}`;
+        document.querySelector('#crumb').textContent = isRoot ? '/' : isArtifact ? '/sre/incidents/checkout/latency-review' : '/sre';
+        document.querySelector('#workspace-kicker').textContent = isRoot ? 'SITES / INDEX' : isArtifact ? 'SRE / INCIDENTS' : 'SRE / SITE';
+        document.querySelector('#workspace-title').textContent = isRoot ? 'Your sites' : isArtifact ? 'Checkout latency incident review' : 'SRE';
+        document.querySelector('#workspace-copy').textContent = isRoot ? 'Pick a site to browse its published pages. Search starts here when you press Command-K.' : isArtifact ? 'A representative incident-review artifact used to demonstrate context-aware search.' : 'Browse recent updates or search the pages published in this site.';
+        document.querySelector('#fake-list').innerHTML = (isRoot ? sites.map((site) => `${site.title}<small>${site.meta}</small>`) : pages.slice(0, 3).map((page) => `${page.title}<small>${page.path}</small>`)).map((line) => `<div>${line}</div>`).join('');
+        document.querySelector('#scope-context').textContent = isRoot ? scope : 'SRE';
+        document.querySelector('#concept-caption').textContent = isRoot ? 'Context: /' : isArtifact ? 'Context: this artifact' : 'Context: /sre';
+        document.querySelector('#result-caption').textContent = isRoot ? 'Choose a site to continue' : isArtifact ? 'Pages in SRE · headings in this artifact' : 'Pages in SRE';
+        query.placeholder = isRoot ? 'Search sites...' : isArtifact ? 'Search pages in SRE...' : 'Search pages in SRE...';
+        if (concept === 'c') {
+          document.querySelector('#drill-path').innerHTML = `<span>Sites</span><span>›</span><b>${isRoot ? 'Choose a site' : 'SRE'}</b>`;
+        } else {
+          document.querySelector('#drill-path').innerHTML = '';
+        }
+        const scopeRow = document.querySelector('#scope-row');
+        const scopes = isRoot ? ['Sites', 'Commands'] : isArtifact ? ['Pages', 'Headings', 'Commands'] : ['Pages', 'Commands'];
+        scopeRow.innerHTML = scopes.map((name) => `<button data-scope="${name}" aria-pressed="${scope === name}">${name}</button>`).join('');
+        scopeRow.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => { activeScope = button.dataset.scope; render(); query.focus(); }));
+
+        let groups = [];
+        const prefix = query.value.trim()[0];
+        if (concept === 'b' && (activeScope || prefix)) {
+          groups = [[scope, listForScope(scope, term)]];
+        } else if (prefix === '@') {
+          groups = [['Sites', listForScope('Sites', term)]];
+        } else if (prefix === '>') {
+          groups = [['Commands', listForScope('Commands', term)]];
+        } else if (prefix === '#' && isArtifact) {
+          groups = [['Headings in this artifact', listForScope('Headings', term)]];
+        } else if (isRoot) {
+          groups = [['Sites', filter(sites.map((site) => ({ ...site, icon: '▣', meta: concept === 'c' ? '→ browse' : site.meta })), term)]];
+          if (!term && concept !== 'b') groups.push(['Commands', commands.slice(0, 2)]);
+        } else if (isArtifact) {
+          if (term.startsWith('#') || activeScope === 'Headings') groups = [[`In this artifact`, filter(headings, term)]];
+          else {
+            groups = [['Pages in SRE', filter(pages, term)]];
+            if (!term && concept !== 'b') groups.push(['Headings in this artifact', headings.slice(0, 2)]);
+          }
+          if (!term && concept !== 'b') groups.push(['Commands', commands.slice(0, 1)]);
+        } else {
+          groups = [['Pages in SRE', filter(pages, term)]];
+          if (!term && concept !== 'b') groups.push(['Recently updated', pages.slice(0, 2)]);
+          if (!term && concept !== 'b') groups.push(['Commands', commands.slice(0, 1)]);
+        }
+        groups = groups.filter(([, entries]) => entries.length);
+        results.innerHTML = groups.map(([name, entries], groupIndex) => `<div class="section-title">${name}</div>${entries.map((entry, entryIndex) => item(entry.title, entry.path, entry.icon || '▤', entry.meta || '', groupIndex === 0 && entryIndex === 0, term)).join('')}`).join('');
+        document.querySelector('#concept-id').textContent = concepts[concept].id;
+        document.querySelector('#concept-title').textContent = concepts[concept].title;
+        document.querySelector('#concept-description').textContent = concepts[concept].description;
+        document.querySelector('#concept-strength-title').textContent = concepts[concept].strengthTitle;
+        document.querySelector('#concept-strength').textContent = concepts[concept].strength;
+        document.querySelector('#concept-tradeoff-title').textContent = concepts[concept].tradeoffTitle;
+        document.querySelector('#concept-tradeoff').textContent = concepts[concept].tradeoff;
+        document.querySelectorAll('[data-context]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.context === context)));
+        document.querySelectorAll('[data-concept]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.concept === concept)));
+      }
+      function filter(entries, term) {
+        if (!term.trim()) return entries;
+        const words = term.toLocaleLowerCase().split(/\s+/).filter(Boolean);
+        return entries.filter((entry) => words.every((word) => `${entry.title} ${entry.path}`.toLocaleLowerCase().includes(word)));
+      }
+      function listForScope(scope, term) {
+        if (scope === 'Sites') return filter(sites.map((site) => ({ ...site, icon: '▣' })), term);
+        if (scope === 'Headings') return filter(headings, term);
+        if (scope === 'Commands') return filter(commands, term);
+        return filter(pages, term);
+      }
+      document.querySelectorAll('[data-context]').forEach((button) => button.addEventListener('click', () => { context = button.dataset.context; activeScope = ''; render(); }));
+      document.querySelectorAll('[data-concept]').forEach((button) => button.addEventListener('click', () => { concept = button.dataset.concept; activeScope = ''; render(); }));
+      query.addEventListener('input', render);
+      query.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && concept === 'c' && context !== 'root') {
+          event.preventDefault();
+          context = context === 'artifact' ? 'site' : 'root';
+          activeScope = '';
+          render();
+        }
+        if (event.key === 'ArrowRight' && concept === 'c' && context === 'root') {
+          event.preventDefault();
+          context = 'site';
+          query.value = '';
+          activeScope = '';
+          render();
+          query.focus();
+        }
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          document.querySelector('#result-caption').textContent = 'Enter opens the selected result and closes the palette';
+        }
+      });
+      render();
+    </script>
+  </body>
+</html>
