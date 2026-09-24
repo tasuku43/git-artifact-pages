@@ -6,12 +6,14 @@ const baseIndex = sreIndex as SiteIndex
 const template = baseIndex.artifacts[0]
 
 function artifact(path: string, title: string, updatedAt: string): ArtifactIndexEntry {
+  const sourcePath = `${path}/index.html`
   return {
     ...template,
-    id: path,
-    path,
+    id: sourcePath,
+    path: sourcePath,
     title,
-    artifactUrl: `/_artifacts/sre/${path}/index.html`,
+    format: 'html',
+    artifactUrl: `/_artifacts/sre/${sourcePath}`,
     updatedAt,
   }
 }

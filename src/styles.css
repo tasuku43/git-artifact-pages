@@ -832,6 +832,75 @@ mark {
   background: var(--surface);
 }
 
+.markdown-scroll {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  scrollbar-color: var(--line) transparent;
+  scrollbar-width: thin;
+}
+
+.markdown-article {
+  width: min(100%, 940px);
+  padding: 46px clamp(24px, 7vw, 88px) 84px;
+  margin: 0 auto;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.markdown-article > :first-child { margin-top: 0; }
+.markdown-article h1,
+.markdown-article h2,
+.markdown-article h3,
+.markdown-article h4 {
+  color: var(--text);
+  font-weight: 620;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  scroll-margin-top: 24px;
+}
+.markdown-article h1 { margin: 0 0 23px; font-size: clamp(28px, 3.4vw, 38px); letter-spacing: -0.04em; }
+.markdown-article h2 { padding-bottom: 8px; margin: 36px 0 14px; border-bottom: 1px solid var(--line-soft); font-size: 23px; }
+.markdown-article h3 { margin: 28px 0 10px; font-size: 18px; }
+.markdown-article h4 { margin: 22px 0 8px; font-size: 15px; }
+.markdown-article p,
+.markdown-article ul,
+.markdown-article ol { color: var(--text-secondary); }
+.markdown-article li + li { margin-top: 5px; }
+.markdown-article a { color: var(--text); text-decoration-color: var(--text-tertiary); text-underline-offset: 3px; }
+.markdown-article a:hover { text-decoration-color: currentColor; }
+.markdown-article blockquote { padding: 1px 0 1px 18px; margin: 18px 0; border-left: 2px solid var(--line); color: var(--text-secondary); }
+.markdown-article blockquote > :first-child { margin-top: 0; }
+.markdown-article blockquote > :last-child { margin-bottom: 0; }
+.markdown-article code,
+.markdown-article kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.86em; }
+.markdown-article :not(pre) > code { padding: 2px 5px; border: 1px solid var(--line-soft); border-radius: 4px; background: var(--hover); color: var(--text); }
+.markdown-article pre { overflow: auto; padding: 16px 18px; border: 1px solid var(--line-soft); border-radius: 8px; background: var(--surface-raised); color: var(--text); font-size: 12px; line-height: 1.65; }
+.markdown-article pre code { font-size: inherit; }
+.markdown-article table { display: block; width: 100%; max-width: 100%; overflow: auto; border-collapse: collapse; color: var(--text-secondary); font-size: 13px; }
+.markdown-article th,
+.markdown-article td { min-width: 100px; padding: 8px 11px; border: 1px solid var(--line); text-align: left; }
+.markdown-article th { color: var(--text); background: var(--hover); font-weight: 580; }
+.markdown-article img { max-width: 100%; height: auto; border-radius: 5px; }
+.markdown-article hr { height: 1px; border: 0; margin: 30px 0; background: var(--line-soft); }
+.markdown-article details { padding: 12px 14px; border: 1px solid var(--line-soft); border-radius: 7px; color: var(--text-secondary); }
+.markdown-article summary { color: var(--text); cursor: pointer; }
+.markdown-article .contains-task-list { padding-left: 1.4em; list-style: none; }
+.markdown-article .task-list-item input { margin: 0 7px 0 -1.4em; accent-color: var(--text-secondary); }
+
+.markdown-state { width: min(100% - 40px, 620px); padding: 24px; margin: 15vh auto 0; color: var(--text-secondary); }
+.markdown-state h1 { margin: 0 0 8px; color: var(--text); font-size: 22px; }
+.markdown-diagram { overflow: auto; padding: 18px; margin: 18px 0; border: 1px solid var(--line-soft); border-radius: 9px; background: var(--surface-raised); text-align: center; }
+.markdown-diagram svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.markdown-diagram-loading,
+.markdown-diagram-error { padding: 12px 14px; margin: 18px 0; border: 1px solid var(--line-soft); border-radius: 8px; color: var(--text-secondary); background: var(--surface-raised); font-size: 12px; }
+.markdown-diagram-error p { margin: 0 0 8px; }
+.markdown-diagram-error pre { margin-bottom: 0; text-align: left; }
+
 .site-home {
   position: absolute;
   inset: 0;

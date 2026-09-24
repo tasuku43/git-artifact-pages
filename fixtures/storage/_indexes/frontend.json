@@ -7,9 +7,10 @@
   "generatedAt": "2026-09-22T00:00:00Z",
   "artifacts": [
     {
-      "id": "design-system/button-guidelines",
+      "id": "design-system/button-guidelines/index.html",
       "title": "Button guidelines",
-      "path": "design-system/button-guidelines",
+      "path": "design-system/button-guidelines/index.html",
+      "format": "html",
       "filename": "index.html",
       "artifactUrl": "/_artifacts/frontend/design-system/button-guidelines/index.html",
       "updatedAt": "2026-09-20T09:30:00Z",

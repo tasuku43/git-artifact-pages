@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/url"
 	"os"
@@ -18,6 +19,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
 	"golang.org/x/net/html"
 )
 
@@ -58,6 +62,7 @@ type ArtifactIndexEntry struct {
 	ID            string             `json:"id"`
 	Title         string             `json:"title"`
 	Path          string             `json:"path"`
+	Format        string             `json:"format"`
 	Filename      string             `json:"filename,omitempty"`
 	ArtifactURL   string             `json:"artifactUrl"`
 	UpdatedAt     string             `json:"updatedAt"`
@@ -202,7 +207,7 @@ func Build(ctx context.Context, options BuildOptions) (BuildResult, error) {
 	}
 	modTimeByDirectory := make(map[string]time.Time)
 	for _, artifact := range artifacts {
-		metadata, err := readArtifactHTML(artifact.file)
+		metadata, err := readArtifactMetadata(artifact.file, artifact.filename)
 		if err != nil {
 			return BuildResult{}, fmt.Errorf("parse artifact %q: %w", artifact.relative, err)
 		}
@@ -232,6 +237,7 @@ func Build(ctx context.Context, options BuildOptions) (BuildResult, error) {
 			ID:          artifact.relative,
 			Title:       artifactTitle,
 			Path:        artifact.relative,
+			Format:      artifactFormat(artifact.filename),
 			Filename:    artifact.filename,
 			ArtifactURL: artifactURL(options.SiteID, artifact.fileRelative),
 			UpdatedAt:   updatedAt.UTC().Format(time.RFC3339),
@@ -293,7 +299,7 @@ func discoverArtifacts(sourcePath, outputRoot string) ([]discoveredArtifact, int
 			return nil
 		}
 		filesScanned++
-		if !isHTMLDocument(entry.Name()) {
+		if !isIndexedDocument(entry.Name()) {
 			return nil
 		}
 		if entry.Type()&os.ModeSymlink != 0 {
@@ -307,17 +313,14 @@ func discoverArtifacts(sourcePath, outputRoot string) ([]discoveredArtifact, int
 		fileRelative = filepath.ToSlash(fileRelative)
 		directory := filepath.Dir(currentPath)
 		filename := entry.Name()
-		if directory == sourcePath && isIndexDocument(filename) {
-			return nil
-		}
 		directoryRelative, err := filepath.Rel(sourcePath, directory)
 		if err != nil {
 			return fmt.Errorf("resolve artifact path %q: %w", directory, err)
 		}
 		directoryRelative = filepath.ToSlash(directoryRelative)
-		relative := artifactRoutePath(fileRelative)
+		relative := fileRelative
 		if previousFile, exists := routes[relative]; exists {
-			return fmt.Errorf("HTML files %q and %q resolve to the same artifact route %q", previousFile, fileRelative, relative)
+			return fmt.Errorf("documents %q and %q resolve to the same artifact path %q", previousFile, fileRelative, relative)
 		}
 		routes[relative] = fileRelative
 		artifacts = append(artifacts, discoveredArtifact{
@@ -346,33 +349,29 @@ func isHTMLDocument(filename string) bool {
 	}
 }
 
-func isIndexDocument(filename string) bool {
-	return strings.EqualFold(filename, "index.html") || strings.EqualFold(filename, "index.htm")
+func isMarkdownDocument(filename string) bool {
+	return strings.EqualFold(filepath.Ext(filename), ".md")
 }
 
-func artifactRoutePath(fileRelative string) string {
-	filename := path.Base(fileRelative)
-	directory := path.Dir(fileRelative)
-	if isIndexDocument(filename) {
-		return directory
+func isIndexedDocument(filename string) bool {
+	return isHTMLDocument(filename) || isMarkdownDocument(filename)
+}
+
+func artifactFormat(filename string) string {
+	if isMarkdownDocument(filename) {
+		return "markdown"
 	}
-	pageName := strings.TrimSuffix(filename, path.Ext(filename))
-	if directory == "." {
-		return pageName
-	}
-	return path.Join(directory, pageName)
+	return "html"
 }
 
 func fallbackArtifactTitle(artifact discoveredArtifact) string {
-	if isIndexDocument(artifact.filename) {
-		return humanize(path.Base(artifact.directoryRelative))
-	}
 	return humanize(strings.TrimSuffix(artifact.filename, path.Ext(artifact.filename)))
 }
 
 type artifactHTMLMetadata struct {
-	title string
-	toc   []TOCEntry
+	title   string
+	firstH1 string
+	toc     []TOCEntry
 }
 
 func readArtifactHTML(filename string) (artifactHTMLMetadata, error) {
@@ -382,7 +381,39 @@ func readArtifactHTML(filename string) (artifactHTMLMetadata, error) {
 	}
 	defer file.Close()
 
-	document, err := html.Parse(file)
+	return readArtifactHTMLDocument(file)
+}
+
+func readArtifactMetadata(filename, basename string) (artifactHTMLMetadata, error) {
+	if !isMarkdownDocument(basename) {
+		return readArtifactHTML(filename)
+	}
+
+	source, err := os.ReadFile(filename)
+	if err != nil {
+		return artifactHTMLMetadata{}, err
+	}
+	markdown := goldmark.New(
+		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
+	)
+	var rendered bytes.Buffer
+	if err := markdown.Convert(source, &rendered); err != nil {
+		return artifactHTMLMetadata{}, err
+	}
+	metadata, err := readArtifactHTMLDocument(&rendered)
+	if err != nil {
+		return artifactHTMLMetadata{}, err
+	}
+	metadata.title = metadata.firstH1
+	for index := range metadata.toc {
+		metadata.toc[index].ID = "md-" + metadata.toc[index].ID
+	}
+	return metadata, nil
+}
+
+func readArtifactHTMLDocument(source io.Reader) (artifactHTMLMetadata, error) {
+	document, err := html.Parse(source)
 	if err != nil {
 		return artifactHTMLMetadata{}, err
 	}
@@ -401,6 +432,9 @@ func readArtifactHTML(filename string) (artifactHTMLMetadata, error) {
 				}
 			}
 			text := normalizedText(node)
+			if node.Data == "h1" && metadata.firstH1 == "" {
+				metadata.firstH1 = text
+			}
 			if id != "" && text != "" {
 				metadata.toc = append(metadata.toc, TOCEntry{Level: int(node.Data[1] - '0'), Text: text, ID: id})
 			}

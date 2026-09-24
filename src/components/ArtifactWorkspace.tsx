@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 import { Sidebar } from './Sidebar'
 import { SiteHome } from './SiteHome'
 import { ThemeSwitcher } from './ThemeSwitcher'
+import { MarkdownArtifact } from './MarkdownArtifact'
 import type { TreeStyle } from './ArtifactTree'
 import type { ArtifactIndexEntry, SiteIndex, SiteSummary } from '../domain/index'
 import type { ResolvedTheme, ThemeMode } from '../domain/theme'
@@ -56,6 +57,7 @@ export function ArtifactWorkspace({
   const currentArtifact = route.artifactPath
     ? findArtifact(index, route.artifactPath)
     : undefined
+  const currentFormat = currentArtifact?.format
   const hasContents = Boolean(currentArtifact?.toc?.length)
   const tocOpen = activePanel === 'contents'
   const detailsOpen = activePanel === 'details'
@@ -236,7 +238,9 @@ export function ArtifactWorkspace({
   const artifactSegments = currentArtifact?.path.split('/').filter(Boolean)
     ?? route.artifactPath?.split('/').filter(Boolean)
     ?? []
-  const iframeSrc = currentArtifact ? `${currentArtifact.artifactUrl}${hash}` : undefined
+  const iframeSrc = currentArtifact && currentFormat === 'html'
+    ? `${currentArtifact.artifactUrl}${hash}`
+    : undefined
 
   return (
     <div className={`app-shell${sidebarOpen ? '' : ' sidebar-collapsed'}`}>
@@ -375,7 +379,15 @@ export function ArtifactWorkspace({
           </header>
 
           <main className={`stage${currentArtifact ? ' has-artifact' : ''}`}>
-            {currentArtifact && iframeSrc ? (
+            {currentArtifact && currentFormat === 'markdown' ? (
+              <MarkdownArtifact
+                key={currentArtifact.artifactUrl}
+                artifact={currentArtifact}
+                siteId={index.site.id}
+                hash={hash}
+                navigate={navigate}
+              />
+            ) : currentArtifact && iframeSrc ? (
               <iframe
                 className="artifact-frame"
                 key={currentArtifact.artifactUrl}

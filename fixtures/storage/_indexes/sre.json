@@ -7,9 +7,10 @@
   "generatedAt": "2026-09-22T00:00:00Z",
   "artifacts": [
     {
-      "id": "incidents/checkout-latency",
+      "id": "incidents/checkout-latency/index.html",
       "title": "Checkout latency incident review",
-      "path": "incidents/checkout-latency",
+      "path": "incidents/checkout-latency/index.html",
+      "format": "html",
       "filename": "index.html",
       "artifactUrl": "/_artifacts/sre/incidents/checkout-latency/index.html",
       "updatedAt": "2026-09-22T00:00:00Z",
@@ -40,9 +41,10 @@
       ]
     },
     {
-      "id": "architecture/platform-topology",
+      "id": "architecture/platform-topology/index.html",
       "title": "Platform topology",
-      "path": "architecture/platform-topology",
+      "path": "architecture/platform-topology/index.html",
+      "format": "html",
       "filename": "index.html",
       "artifactUrl": "/_artifacts/sre/architecture/platform-topology/index.html",
       "updatedAt": "2026-09-21T12:00:00Z",
@@ -64,6 +66,40 @@
           "level": 2,
           "text": "Traffic flow",
           "id": "traffic-flow"
+        }
+      ]
+    },
+    {
+      "id": "runbooks/service-recovery.md",
+      "title": "Service recovery",
+      "path": "runbooks/service-recovery.md",
+      "format": "markdown",
+      "filename": "service-recovery.md",
+      "artifactUrl": "/_artifacts/sre/runbooks/service-recovery.md",
+      "updatedAt": "2026-09-20T10:00:00Z",
+      "lastCommitter": {
+        "name": "Reliability Team"
+      },
+      "source": {
+        "repository": "example/runbooks",
+        "repositoryUrl": "https://github.com/example/runbooks",
+        "ref": "main"
+      },
+      "toc": [
+        {
+          "level": 1,
+          "text": "Service recovery",
+          "id": "md-service-recovery"
+        },
+        {
+          "level": 2,
+          "text": "Request path",
+          "id": "md-request-path"
+        },
+        {
+          "level": 2,
+          "text": "Recovery checks",
+          "id": "md-recovery-checks"
         }
       ]
     }

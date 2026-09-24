@@ -146,7 +146,7 @@ Example:
 
 ~~~json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 1,
   "site": {
     "id": "sre",
     "title": "SRE"
@@ -177,8 +177,9 @@ Example:
 }
 ~~~
 
-The important public contract is one index per site. Schema version 2 adds the `format` field
-(`html` or `markdown`) and uses the exact source-relative document path as its stable identity.
+The important public contract is one index per site. Before the first release, schema version 1
+uses the `format` field (`html` or `markdown`) and the exact source-relative document path as its
+stable identity. No compatibility layer for earlier pre-release shapes is required.
 
 The builder indexes `.html`, `.htm`, and `.md` documents as individual artifacts. `id` and `path`
 are the exact source-relative path, including filename and extension; `artifactUrl` points to the

@@ -19,10 +19,13 @@ export type ArtifactSource = {
   ref: string
 }
 
+export type ArtifactFormat = 'html' | 'markdown'
+
 export type ArtifactIndexEntry = {
   id: string
   title: string
   path: string
+  format: ArtifactFormat
   filename?: string
   artifactUrl: string
   updatedAt: string

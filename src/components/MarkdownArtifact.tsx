@@ -1,0 +1,173 @@
+import { useEffect, useState } from 'react'
+import Markdown, { defaultUrlTransform, type Options as MarkdownOptions } from 'react-markdown'
+import rehypeRaw from 'rehype-raw'
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
+import rehypeSlug from 'rehype-slug'
+import remarkGfm from 'remark-gfm'
+import { artifactRouteHref } from '../routing'
+import type { ArtifactIndexEntry } from '../domain/index'
+import { MermaidDiagram } from './MermaidDiagram'
+
+const markdownSanitizeSchema = {
+  ...defaultSchema,
+  clobberPrefix: 'md-',
+}
+const markdownRemarkPlugins: NonNullable<MarkdownOptions['remarkPlugins']> = [remarkGfm]
+const markdownRehypePlugins: NonNullable<MarkdownOptions['rehypePlugins']> = [
+  rehypeRaw,
+  [rehypeSlug, { prefix: '' }],
+  [rehypeSanitize, markdownSanitizeSchema],
+]
+
+export function MarkdownArtifact({
+  artifact,
+  siteId,
+  hash,
+  navigate,
+}: {
+  artifact: ArtifactIndexEntry
+  siteId: string
+  hash: string
+  navigate: (href: string) => void
+}) {
+  const [source, setSource] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setSource(null)
+    setError(null)
+
+    fetch(artifact.artifactUrl, { signal: controller.signal }).then(async (response) => {
+      if (!response.ok) throw new Error(`Request failed with status ${response.status}`)
+      return response.text()
+    }).then(
+      (text) => setSource(text),
+      (reason: unknown) => {
+        if (controller.signal.aborted) return
+        setError(reason instanceof Error ? reason.message : 'Could not load this Markdown document.')
+      },
+    )
+
+    return () => controller.abort()
+  }, [artifact.artifactUrl])
+
+  useEffect(() => {
+    if (!hash || source === null) return
+    const id = decodeHash(hash)
+    window.requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ block: 'start' })
+    })
+  }, [hash, source])
+
+  if (error) {
+    return (
+      <div className="markdown-state" role="alert">
+        <h1>Markdown unavailable</h1>
+        <p>{error}</p>
+      </div>
+    )
+  }
+
+  if (source === null) {
+    return <div className="markdown-state" role="status">Loading document…</div>
+  }
+
+  return (
+    <div className="markdown-scroll" data-testid="markdown-document">
+      <article className="markdown-article">
+        <Markdown
+          remarkPlugins={markdownRemarkPlugins}
+          rehypePlugins={markdownRehypePlugins}
+          urlTransform={(url, key) => transformMarkdownUrl(url, key, artifact, siteId)}
+          components={{
+            a: ({ href, children, ...props }) => {
+              const isAppRoute = Boolean(href?.startsWith(`/${encodeURIComponent(siteId)}/`))
+              const isSamePage = Boolean(href?.startsWith('#'))
+              const openInNewTab = !isAppRoute && !isSamePage && Boolean(href)
+              return (
+                <a
+                  {...props}
+                  href={href}
+                  target={openInNewTab ? '_blank' : undefined}
+                  rel={openInNewTab ? 'noreferrer noopener' : undefined}
+                  onClick={(event) => {
+                    if (!isAppRoute || !href || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                    event.preventDefault()
+                    navigate(href)
+                  }}
+                >
+                  {children}
+                </a>
+              )
+            },
+            code: ({ className, children, ...props }) => {
+              if (className?.split(/\s+/).includes('language-mermaid')) {
+                return <MermaidDiagram source={String(children).replace(/\n$/, '')} />
+              }
+              return <code {...props} className={className}>{children}</code>
+            },
+          }}
+        >
+          {source}
+        </Markdown>
+      </article>
+    </div>
+  )
+}
+
+function transformMarkdownUrl(
+  value: string,
+  key: string,
+  artifact: ArtifactIndexEntry,
+  siteId: string,
+) {
+  const safeValue = defaultUrlTransform(value)
+  if (!safeValue) return ''
+  if (safeValue.startsWith('#')) return safeValue.startsWith('#md-') ? safeValue : `#md-${safeValue.slice(1)}`
+
+  let resolved: URL
+  try {
+    resolved = new URL(safeValue, new URL(artifact.artifactUrl, window.location.origin))
+  } catch {
+    return ''
+  }
+
+  if (resolved.protocol === 'mailto:') return resolved.href
+  if (resolved.protocol === 'https:' && resolved.origin !== window.location.origin) return resolved.href
+  if (
+    resolved.origin === window.location.origin &&
+    resolved.pathname.startsWith('/_artifacts/') &&
+    !resolved.pathname.startsWith(`/_artifacts/${encodeURIComponent(siteId)}/`)
+  ) return ''
+  if (resolved.protocol !== 'https:' && resolved.origin !== window.location.origin) return ''
+  if (resolved.protocol !== 'https:' && resolved.protocol !== 'http:') return ''
+
+  const artifactPrefix = `/_artifacts/${encodeURIComponent(siteId)}/`
+  if (key === 'href' && resolved.origin === window.location.origin && resolved.pathname.startsWith(artifactPrefix)) {
+    const relativePath = resolved.pathname.slice(artifactPrefix.length)
+    if (/\.(?:html?|md)$/i.test(relativePath)) {
+      const decodedPath = relativePath.split('/').map(decodePathSegment).join('/')
+      const suffix = `${resolved.search}${resolved.hash}`
+      return `${artifactRouteHref(siteId, decodedPath)}${suffix}`
+    }
+  }
+
+  return resolved.href
+}
+
+function decodePathSegment(segment: string) {
+  try {
+    return decodeURIComponent(segment)
+  } catch {
+    return segment
+  }
+}
+
+function decodeHash(hash: string) {
+  try {
+    return decodeURIComponent(hash.slice(1))
+  } catch {
+    return hash.slice(1)
+  }
+}

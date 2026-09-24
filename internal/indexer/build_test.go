@@ -30,6 +30,7 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/index.html", incidentHTML)
 	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/diagnostics.html", `<title>Latency diagnostics</title><h1 id="signals">Signals</h1>`)
 	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/timeline.htm", `<title>Incident timeline</title><h1 id="events">Events</h1>`)
+	writeFixtureFile(t, repositoryRoot, "artifacts/runbooks/service-recovery.md", "# Service recovery\n\nA runbook.\n\n## Request path\n\n| Step | Owner |\n| --- | --- |\n| Gateway | Edge |\n\n## Recovery checks\n\n- [x] Check retries\n- [ ] Compare regions\n\n```mermaid\nflowchart LR\n  Edge --> API[API gateway]\n```\n")
 	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/assets/css/styles.css", "body { color: navy; }\n")
 	writeFixtureFile(t, repositoryRoot, "artifacts/incidents/checkout-latency/assets/data.json", `{"status":"resolved"}`)
 	commitTime := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
@@ -50,11 +51,11 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Build() error = %v", err)
 	}
-	if result.FilesScanned != 8 {
-		t.Errorf("FilesScanned = %d, want 8", result.FilesScanned)
+	if result.FilesScanned != 9 {
+		t.Errorf("FilesScanned = %d, want 9", result.FilesScanned)
 	}
-	if result.ArtifactsIndexed != 5 {
-		t.Errorf("ArtifactsIndexed = %d, want 5", result.ArtifactsIndexed)
+	if result.ArtifactsIndexed != 7 {
+		t.Errorf("ArtifactsIndexed = %d, want 7", result.ArtifactsIndexed)
 	}
 	if result.OutputBytes == 0 || result.Elapsed <= 0 {
 		t.Errorf("Build() returned empty metrics: %+v", result)
@@ -74,13 +75,17 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 	if index.GeneratedAt != generatedAt.Format(time.RFC3339) {
 		t.Errorf("GeneratedAt = %q, want %q", index.GeneratedAt, generatedAt.Format(time.RFC3339))
 	}
-	if len(index.Artifacts) != 5 {
-		t.Fatalf("got %d artifacts, want 5", len(index.Artifacts))
+	if len(index.Artifacts) != 7 {
+		t.Fatalf("got %d artifacts, want 7", len(index.Artifacts))
+	}
+	artifactsByPath := make(map[string]ArtifactIndexEntry, len(index.Artifacts))
+	for _, artifact := range index.Artifacts {
+		artifactsByPath[artifact.Path] = artifact
 	}
 
-	architecture := index.Artifacts[0]
-	if architecture.ID != "architecture/platform" || architecture.Title != "Platform topology" {
-		t.Errorf("first artifact = %+v, want architecture/platform with extracted title", architecture)
+	architecture := artifactsByPath["architecture/platform/index.html"]
+	if architecture.ID != "architecture/platform/index.html" || architecture.Title != "Platform topology" || architecture.Format != "html" {
+		t.Errorf("architecture artifact = %+v, want exact HTML source path and extracted title", architecture)
 	}
 	if architecture.ArtifactURL != "/_artifacts/sre/architecture/platform/index.html" {
 		t.Errorf("architecture artifactUrl = %q", architecture.ArtifactURL)
@@ -98,8 +103,8 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 		t.Errorf("architecture TOC = %+v", architecture.TOC)
 	}
 
-	incident := index.Artifacts[1]
-	if incident.ID != "incidents/checkout-latency" || incident.Title != "Checkout latency review" {
+	incident := artifactsByPath["incidents/checkout-latency/index.html"]
+	if incident.ID != "incidents/checkout-latency/index.html" || incident.Title != "Checkout latency review" {
 		t.Errorf("incident artifact = %+v, want extracted title and relative path", incident)
 	}
 	if incident.Filename != "index.html" || incident.ArtifactURL != "/_artifacts/sre/incidents/checkout-latency/index.html" {
@@ -125,8 +130,8 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 		t.Errorf("incident lastCommitter = %+v, want the Git committer", incident.LastCommitter)
 	}
 
-	diagnostics := index.Artifacts[2]
-	if diagnostics.ID != "incidents/checkout-latency/diagnostics" || diagnostics.Path != diagnostics.ID || diagnostics.Title != "Latency diagnostics" {
+	diagnostics := artifactsByPath["incidents/checkout-latency/diagnostics.html"]
+	if diagnostics.ID != "incidents/checkout-latency/diagnostics.html" || diagnostics.Path != diagnostics.ID || diagnostics.Title != "Latency diagnostics" {
 		t.Errorf("named HTML artifact = %+v, want diagnostics page with its HTML title", diagnostics)
 	}
 	if diagnostics.Filename != "diagnostics.html" || diagnostics.ArtifactURL != "/_artifacts/sre/incidents/checkout-latency/diagnostics.html" {
@@ -139,13 +144,34 @@ func TestBuildCreatesPerSiteIndexWithoutCopyingSources(t *testing.T) {
 		t.Errorf("diagnostics updatedAt = %q, want %q", diagnostics.UpdatedAt, commitTime.Format(time.RFC3339))
 	}
 
-	timeline := index.Artifacts[3]
-	if timeline.ID != "incidents/checkout-latency/timeline" || timeline.Filename != "timeline.htm" || timeline.ArtifactURL != "/_artifacts/sre/incidents/checkout-latency/timeline.htm" {
+	timeline := artifactsByPath["incidents/checkout-latency/timeline.htm"]
+	if timeline.ID != "incidents/checkout-latency/timeline.htm" || timeline.Filename != "timeline.htm" || timeline.ArtifactURL != "/_artifacts/sre/incidents/checkout-latency/timeline.htm" {
 		t.Errorf(".htm artifact = %+v", timeline)
 	}
-	overview := index.Artifacts[4]
-	if overview.ID != "overview" || overview.Filename != "overview.html" || overview.ArtifactURL != "/_artifacts/sre/overview.html" {
+	overview := artifactsByPath["overview.html"]
+	if overview.ID != "overview.html" || overview.Filename != "overview.html" || overview.ArtifactURL != "/_artifacts/sre/overview.html" {
 		t.Errorf("root-level named HTML artifact = %+v", overview)
+	}
+	rootIndex := artifactsByPath["index.html"]
+	if rootIndex.Title != "Site landing page" || rootIndex.ArtifactURL != "/_artifacts/sre/index.html" {
+		t.Errorf("root index document = %+v, want a directly addressable artifact", rootIndex)
+	}
+	markdown := artifactsByPath["runbooks/service-recovery.md"]
+	if markdown.Title != "Service recovery" || markdown.Format != "markdown" || markdown.ID != "runbooks/service-recovery.md" {
+		t.Errorf("Markdown artifact = %+v, want first H1 title and extension-preserving identity", markdown)
+	}
+	wantMarkdownTOC := []TOCEntry{
+		{Level: 1, Text: "Service recovery", ID: "md-service-recovery"},
+		{Level: 2, Text: "Request path", ID: "md-request-path"},
+		{Level: 2, Text: "Recovery checks", ID: "md-recovery-checks"},
+	}
+	if len(markdown.TOC) != len(wantMarkdownTOC) {
+		t.Fatalf("Markdown TOC = %+v, want %+v", markdown.TOC, wantMarkdownTOC)
+	}
+	for index := range wantMarkdownTOC {
+		if markdown.TOC[index] != wantMarkdownTOC[index] {
+			t.Errorf("Markdown TOC[%d] = %+v, want %+v", index, markdown.TOC[index], wantMarkdownTOC[index])
+		}
 	}
 
 	unchanged, err := os.ReadFile(filepath.Join(repositoryRoot, "artifacts/incidents/checkout-latency/index.html"))
@@ -217,7 +243,7 @@ func TestBuildUpdatedAtTracksUncommittedAndCommittedAssetChanges(t *testing.T) {
 	for _, artifact := range index.Artifacts {
 		want := secondCommit
 		wantCommitter := "Stylesheet Committer"
-		if artifact.ID == "reports/latency/appendix" {
+		if artifact.ID == "reports/latency/appendix.html" {
 			want = thirdCommit
 			wantCommitter = "Appendix Committer"
 		}
@@ -285,22 +311,38 @@ func TestBuildUsesFilesystemMetadataForGitIgnoredStaticOutput(t *testing.T) {
 	}
 }
 
-func TestBuildRejectsHTMLFilesWithTheSameLogicalRoute(t *testing.T) {
+func TestBuildKeepsDifferentSourceFilesAsDistinctRoutes(t *testing.T) {
 	repositoryRoot := initializeGitRepository(t)
 	restoreWorkingDirectory := chdirForTest(t, repositoryRoot)
 	defer restoreWorkingDirectory()
 
-	writeFixtureFile(t, repositoryRoot, "artifacts/reports.html", `<title>Flat report</title>`)
+	writeFixtureFile(t, repositoryRoot, "artifacts/reports.html", `<title>HTML report</title>`)
+	writeFixtureFile(t, repositoryRoot, "artifacts/reports.md", "# Markdown report\n")
 	writeFixtureFile(t, repositoryRoot, "artifacts/reports/index.html", `<title>Nested report</title>`)
-	commitFixture(t, repositoryRoot, "add colliding reports", time.Date(2026, 3, 5, 12, 0, 0, 0, time.UTC))
+	commitFixture(t, repositoryRoot, "add distinct reports", time.Date(2026, 3, 5, 12, 0, 0, 0, time.UTC))
+
+	index := buildAndReadIndex(t, repositoryRoot, "sre")
+	if len(index.Artifacts) != 3 {
+		t.Fatalf("indexed %d documents, want 3", len(index.Artifacts))
+	}
+	byPath := make(map[string]ArtifactIndexEntry, len(index.Artifacts))
+	for _, artifact := range index.Artifacts {
+		byPath[artifact.Path] = artifact
+	}
+	if byPath["reports.html"].Format != "html" || byPath["reports.md"].Format != "markdown" || byPath["reports/index.html"].Format != "html" {
+		t.Errorf("same-name and index documents were not independently indexed: %+v", index.Artifacts)
+	}
+	if byPath["reports.md"].Title != "Markdown report" {
+		t.Errorf("Markdown title = %q, want first H1", byPath["reports.md"].Title)
+	}
 
 	_, err := Build(context.Background(), BuildOptions{
 		SiteID:    "sre",
 		SourceDir: "artifacts",
 		OutputDir: ".local/storage",
 	})
-	if err == nil || !strings.Contains(err.Error(), `same artifact route "reports"`) {
-		t.Fatalf("Build() error = %v, want a duplicate logical-route error", err)
+	if err != nil {
+		t.Fatalf("Build() second call error = %v, want extension-distinct pages to coexist", err)
 	}
 }
 

@@ -91,7 +91,7 @@ test('context prioritizes local pages while @ and > explicitly scope results', a
 })
 
 test('artifact-context # search opens a heading and closes the palette', async ({ page }) => {
-  await page.goto('/sre/incidents/checkout-latency')
+  await page.goto('/sre/incidents/checkout-latency/index.html')
   await page.getByRole('button', { name: 'Open command palette (⌘ K)' }).click()
 
   const palette = page.getByRole('dialog', { name: 'Command palette' })
@@ -118,7 +118,7 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   const sreDocumentResponse = page.waitForResponse((response) => {
     return new URL(response.url()).pathname === '/_artifacts/sre/incidents/checkout-latency/index.html'
   })
-  const navigationResponse = await page.goto('/sre/incidents/checkout-latency')
+  const navigationResponse = await page.goto('/sre/incidents/checkout-latency/index.html')
   expect(navigationResponse?.status()).toBe(200)
   expect(navigationResponse?.headers()['content-type']).toContain('text/html')
 
@@ -180,7 +180,7 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   await page.reload()
   await expect(artifact.getByRole('heading', { name: 'Summary' })).toBeVisible()
   await expect(artifact.getByRole('status')).toHaveText('SRE incident bundle loaded')
-  await expect(page).toHaveURL(/\/sre\/incidents\/checkout-latency#root-cause$/)
+  await expect(page).toHaveURL(/\/sre\/incidents\/checkout-latency\/index\.html#root-cause$/)
 
   const frontendPage = await page.context().newPage()
   const frontendResponsePaths: string[] = []
@@ -193,7 +193,7 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   const frontendDocumentResponse = frontendPage.waitForResponse((response) => {
     return new URL(response.url()).pathname === '/_artifacts/frontend/design-system/button-guidelines/index.html'
   })
-  await frontendPage.goto('/frontend/design-system/button-guidelines')
+  await frontendPage.goto('/frontend/design-system/button-guidelines/index.html')
 
   const frontend = frontendPage.frameLocator('iframe[title="Button guidelines"]')
   await expect(frontend.getByRole('heading', { name: 'Buttons' })).toBeVisible()
@@ -301,8 +301,39 @@ test('multi-file artifacts stay in their site namespace when relative asset path
   await frontendPage.close()
 })
 
+test('Markdown pages render safely with GFM, Mermaid, local assets, and extensionful links', async ({ page }) => {
+  const imageResponse = page.waitForResponse((response) => {
+    return new URL(response.url()).pathname === '/_artifacts/sre/runbooks/assets/request-path.svg'
+  })
+
+  await page.goto('/sre/runbooks/service-recovery.md')
+  await expect(page).toHaveURL(/\/sre\/runbooks\/service-recovery\.md$/)
+  await expect(page.locator('iframe')).toHaveCount(0)
+
+  const reader = page.getByTestId('markdown-document')
+  await expect(reader.getByRole('heading', { level: 1, name: 'Service recovery' })).toBeVisible()
+  await expect(reader.getByRole('table')).toBeVisible()
+  await expect(reader.locator('input[type="checkbox"]')).toHaveCount(2)
+  await expect(reader.locator('input[type="checkbox"]').nth(0)).toBeChecked()
+  await expect(reader.locator('input[type="checkbox"]').nth(1)).not.toBeChecked()
+  await expect(reader.locator('.markdown-diagram svg')).toBeVisible()
+  await expect(reader.getByRole('img', { name: 'Request path from edge through gateway to services' })).toBeVisible()
+  expect((await imageResponse).status()).toBe(200)
+  expect(await page.evaluate(() => (window as Window & { __markdownScriptShouldNotRun?: boolean }).__markdownScriptShouldNotRun)).toBeUndefined()
+
+  await page.getByRole('button', { name: 'Contents', exact: true }).click()
+  const contents = page.getByRole('complementary', { name: 'Contents' })
+  await contents.getByRole('button', { name: 'Request path' }).click()
+  await expect(page).toHaveURL(/#md-request-path$/)
+  await expect(reader.getByRole('heading', { name: 'Request path' })).toBeInViewport()
+
+  await reader.getByRole('link', { name: 'Open the related incident review' }).click()
+  await expect(page).toHaveURL(/\/sre\/incidents\/checkout-latency\/index\.html$/)
+  await expect(page.locator('iframe[title="Checkout latency incident review"]')).toBeVisible()
+})
+
 test('the command palette shortcut works while the artifact iframe has focus', async ({ page }) => {
-  await page.goto('/sre/incidents/checkout-latency')
+  await page.goto('/sre/incidents/checkout-latency/index.html')
   const artifact = page.frameLocator('iframe[title="Checkout latency incident review"]')
   const summaryHeading = artifact.getByRole('heading', { name: 'Summary' })
   await expect(summaryHeading).toBeVisible()
@@ -316,11 +347,11 @@ test('the command palette shortcut works while the artifact iframe has focus', a
   await search.fill('Platform topology')
   await search.press('Enter')
   await expect(palette).toBeHidden()
-  await expect(page).toHaveURL(/\/sre\/architecture\/platform-topology$/)
+  await expect(page).toHaveURL(/\/sre\/architecture\/platform-topology\/index\.html$/)
 })
 
 test('command palette fuzzy search shows matched characters in titles and paths', async ({ page }) => {
-  await page.goto('/sre/incidents/checkout-latency')
+  await page.goto('/sre/incidents/checkout-latency/index.html')
   await page.getByRole('button', { name: 'Open command palette (⌘ K)' }).click()
 
   const palette = page.getByRole('dialog', { name: 'Command palette' })
@@ -359,7 +390,7 @@ function waitForResponses(page: Page, paths: string[]) {
 }
 
 test('the selected theme is offered in the menu and reaches adaptive artifact iframes', async ({ page }) => {
-  await page.goto('/showcase/tests/color-scheme-response')
+  await page.goto('/showcase/tests/color-scheme-response/index.html')
 
   const frame = page.frameLocator('iframe[title="Color scheme response fixture"]')
   const systemTheme = await page.locator('html').getAttribute('data-theme')
@@ -395,7 +426,7 @@ test('the collapsed rail searches artifacts and switches sites', async ({ page }
     return new URL(response.url()).pathname === '/_indexes/frontend.json'
   })
 
-  await page.goto('/sre/incidents/checkout-latency')
+  await page.goto('/sre/incidents/checkout-latency/index.html')
   await frontendIndex
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await expect.poll(() => page.evaluate(() => localStorage.getItem('git-artifact-pages-theme'))).toBe('system')
@@ -459,7 +490,7 @@ test('the collapsed rail searches artifacts and switches sites', async ({ page }
   await artifactSearch.press('Enter')
   await expect(searchPalette).toBeHidden()
 
-  await expect(page).toHaveURL(/\/sre\/architecture\/platform-topology$/)
+  await expect(page).toHaveURL(/\/sre\/architecture\/platform-topology\/index\.html$/)
   await expect(page.getByRole('button', { name: 'Expand navigation' })).toBeVisible()
   await expect(page.getByRole('navigation', { name: 'Artifact path' })).not.toContainText('SRE')
 
@@ -486,26 +517,26 @@ test('HTML showcase covers distinct page styles in the artifact iframe', async (
   }))
 
   const examples = [
-    { path: 'editorial/field-notes', heading: /Designing for resilience/ },
-    { path: 'dashboards/edge-observatory', heading: 'Edge latency observatory' },
-    { path: 'handbook/inclusive-components', heading: 'Inclusive component handbook' },
-    { path: 'reports/cloud-spend-review', heading: /Cloud spend review/ },
-    { path: 'presentations/resilient-by-design', heading: /Resilient by design/ },
-    { path: 'product/atlas-launch', heading: /Make space for the work/ },
-    { path: 'forms/incident-intake', heading: 'Incident intake' },
+    { path: 'editorial/field-notes', route: 'editorial/field-notes/index.html', heading: /Designing for resilience/ },
+    { path: 'dashboards/edge-observatory', route: 'dashboards/edge-observatory/index.html', heading: 'Edge latency observatory' },
+    { path: 'handbook/inclusive-components', route: 'handbook/inclusive-components/index.html', heading: 'Inclusive component handbook' },
+    { path: 'reports/cloud-spend-review', route: 'reports/cloud-spend-review/index.html', heading: /Cloud spend review/ },
+    { path: 'presentations/resilient-by-design', route: 'presentations/resilient-by-design/index.html', heading: /Resilient by design/ },
+    { path: 'product/atlas-launch', route: 'product/atlas-launch/index.html', heading: /Make space for the work/ },
+    { path: 'forms/incident-intake', route: 'forms/incident-intake/index.html', heading: 'Incident intake' },
   ]
 
   for (const example of examples) {
     const stylesheetResponse = page.waitForResponse((response) => {
       return new URL(response.url()).pathname === `/_artifacts/showcase/${example.path}/assets/css/styles.css`
     })
-    await page.goto(`/showcase/${example.path}`)
+    await page.goto(`/showcase/${example.route}`)
     const artifact = page.frameLocator('iframe')
     await expect(artifact.getByRole('heading', { name: example.heading })).toBeVisible()
     expect((await stylesheetResponse).status()).toBe(200)
   }
 
-  await page.goto('/showcase/dashboards/edge-observatory')
+  await page.goto('/showcase/dashboards/edge-observatory/index.html')
   const dashboard = page.frameLocator('iframe')
   await expect(dashboard.locator('body')).toHaveCSS('background-color', 'rgb(11, 17, 24)')
 })

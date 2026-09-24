@@ -9,7 +9,7 @@ import type { ThemeMode } from '../domain/theme'
 const indexes = storyIndexes
 
 type WorkspaceStoryArgs = {
-  view: 'site-home' | 'artifact'
+  view: 'site-home' | 'artifact' | 'markdown'
   theme: ThemeMode
   initialSidebarOpen: boolean
 }
@@ -18,7 +18,11 @@ function WorkspaceStory({ view, theme, initialSidebarOpen }: WorkspaceStoryArgs)
   const [route, setRoute] = useState<Extract<AppRoute, { kind: 'site' }>>(() => ({
     kind: 'site',
     siteId: deepSreIndex.site.id,
-    artifactPath: view === 'artifact' ? 'incidents/checkout-latency' : undefined,
+    artifactPath: view === 'site-home'
+      ? undefined
+      : view === 'markdown'
+        ? 'runbooks/service-recovery.md'
+        : 'incidents/checkout-latency/index.html',
   }))
   const [hash, setHash] = useState('')
   const [activeThemeMode, setActiveThemeMode] = useState(theme)
@@ -28,7 +32,11 @@ function WorkspaceStory({ view, theme, initialSidebarOpen }: WorkspaceStoryArgs)
     setRoute({
       kind: 'site',
       siteId: deepSreIndex.site.id,
-      artifactPath: view === 'artifact' ? 'incidents/checkout-latency' : undefined,
+      artifactPath: view === 'site-home'
+        ? undefined
+        : view === 'markdown'
+          ? 'runbooks/service-recovery.md'
+          : 'incidents/checkout-latency/index.html',
     })
     setHash('')
   }, [view])
@@ -80,7 +88,7 @@ const meta = {
   argTypes: {
     view: {
       control: 'radio',
-      options: ['site-home', 'artifact'],
+      options: ['site-home', 'artifact', 'markdown'],
       description: 'Choose the main workspace state.',
     },
     theme: {
@@ -100,6 +108,11 @@ type Story = StoryObj<typeof meta>
 
 export const ArtifactView: Story = {
   name: 'Artifact viewer',
+}
+
+export const MarkdownView: Story = {
+  name: 'Markdown reader',
+  args: { view: 'markdown' },
 }
 
 export const SiteHome: Story = {
