@@ -109,11 +109,16 @@ export function CommandPalette({
   }, [selectedIndex])
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'ArrowDown') {
+    const moveDown = event.key === 'ArrowDown' || (event.ctrlKey && event.key.toLowerCase() === 'j')
+    const moveUp = event.key === 'ArrowUp' || (event.ctrlKey && event.key.toLowerCase() === 'k')
+
+    if (moveDown) {
       event.preventDefault()
+      if (event.ctrlKey) event.stopPropagation()
       setSelectedIndex((current) => Math.min(current + 1, Math.max(entries.length - 1, 0)))
-    } else if (event.key === 'ArrowUp') {
+    } else if (moveUp) {
       event.preventDefault()
+      if (event.ctrlKey) event.stopPropagation()
       setSelectedIndex((current) => Math.max(current - 1, 0))
     } else if (event.key === 'Enter') {
       event.preventDefault()
@@ -206,7 +211,7 @@ export function CommandPalette({
         {loading ? <p className="palette-loading" role="status">Loading other site indexes…</p> : null}
 
         <footer className="palette-footer">
-          <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+          <span><kbd>↑</kbd><kbd>↓</kbd> or <kbd>Ctrl+J/K</kbd> navigate</span>
           <span><kbd>↵</kbd> open</span>
           <span><code>&gt;</code> commands</span>
           <span><code>@</code> sites</span>

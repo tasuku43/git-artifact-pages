@@ -54,6 +54,45 @@ test('the root command palette searches sites first and opens the selected site'
   await expect(page.getByRole('heading', { name: 'Frontend', exact: true })).toBeVisible()
 })
 
+test('the command palette supports Ctrl+J/K navigation and opens the selected result', async ({ page }) => {
+  await page.goto('/sre')
+  await page.getByRole('button', { name: 'Open command palette (⌘ K)' }).click()
+
+  const palette = page.getByRole('dialog', { name: 'Command palette' })
+  const search = palette.getByRole('textbox', { name: 'Search artifacts, sites, commands, and headings' })
+  await search.fill('incident')
+
+  await expect(palette.locator('.palette-footer')).toHaveText(/Ctrl\+J\/K/)
+  const options = palette.getByRole('option')
+  expect(await options.count()).toBeGreaterThan(1)
+  const selectedResult = () => palette.locator('[aria-selected="true"]').evaluate((element) => ({
+    path: element.querySelector('.palette-entry-subtitle')?.textContent ?? '',
+    section: element.closest('.palette-section')?.querySelector('.palette-section-title')?.textContent ?? '',
+  }))
+  const firstResult = await selectedResult()
+
+  await search.press('Control+j')
+  const secondResult = await selectedResult()
+  expect(secondResult.path).not.toBe(firstResult.path)
+
+  await search.press('Control+k')
+  expect(await selectedResult()).toEqual(firstResult)
+
+  await search.press('Control+j')
+  const resultOpenedByEnter = await selectedResult()
+  await search.press('Enter')
+
+  await expect(palette).toBeHidden()
+  const siteIdsBySection: Record<string, string> = {
+    'Pages in SRE': 'sre',
+    'Pages in HTML Showcase': 'showcase',
+  }
+  const siteId = siteIdsBySection[resultOpenedByEnter.section]
+  expect(siteId).toBeTruthy()
+  await expect.poll(() => new URL(page.url()).pathname).toBe(`/${siteId}/${resultOpenedByEnter.path}`)
+  await expect(page.locator('iframe.artifact-frame')).toBeVisible()
+})
+
 test('context prioritizes local pages while @ and > explicitly scope results', async ({ page }) => {
   await page.goto('/sre')
   await page.getByRole('button', { name: 'Open command palette (⌘ K)' }).click()
