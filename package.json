@@ -8,6 +8,8 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "build": "tsc -b && vite build",
+    "fixtures:palette": "node scripts/benchmark-palette.mjs --generate-only",
+    "benchmark:palette": "npm run build && node scripts/benchmark-palette.mjs",
     "package:web": "npm run build && node scripts/package-web-release.mjs",
     "preview": "vite preview",
     "serve:local": "npm run build && docker compose up",
