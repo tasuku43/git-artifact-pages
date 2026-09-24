@@ -167,6 +167,9 @@ function ArtifactRow({
         <span className="tree-label">{highlight(artifact.title, query)}</span>
         {showPath ? <span className="tree-path mono">{highlight(artifact.path, query)}</span> : null}
       </span>
+      {artifact.format === 'markdown' ? (
+        <span className="tree-format-tag" title="Markdown document">MD</span>
+      ) : null}
     </button>
   )
 }

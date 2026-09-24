@@ -524,6 +524,16 @@ kbd {
   font-weight: 550;
 }
 
+.tree-format-tag {
+  flex: none;
+  margin-left: auto;
+  color: var(--text-tertiary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
 .tree-path-row {
   align-items: flex-start;
   padding-top: 6px;
@@ -856,7 +866,9 @@ mark {
 .markdown-article h1,
 .markdown-article h2,
 .markdown-article h3,
-.markdown-article h4 {
+.markdown-article h4,
+.markdown-article h5,
+.markdown-article h6 {
   color: var(--text);
   font-weight: 620;
   line-height: 1.25;
@@ -867,6 +879,8 @@ mark {
 .markdown-article h2 { padding-bottom: 8px; margin: 36px 0 14px; border-bottom: 1px solid var(--line-soft); font-size: 23px; }
 .markdown-article h3 { margin: 28px 0 10px; font-size: 18px; }
 .markdown-article h4 { margin: 22px 0 8px; font-size: 15px; }
+.markdown-article h5 { margin: 20px 0 7px; font-size: 13px; }
+.markdown-article h6 { margin: 18px 0 6px; color: var(--text-secondary); font-size: 12px; letter-spacing: 0; text-transform: uppercase; }
 .markdown-article p,
 .markdown-article ul,
 .markdown-article ol { color: var(--text-secondary); }
@@ -894,8 +908,9 @@ mark {
 
 .markdown-state { width: min(100% - 40px, 620px); padding: 24px; margin: 15vh auto 0; color: var(--text-secondary); }
 .markdown-state h1 { margin: 0 0 8px; color: var(--text); font-size: 22px; }
-.markdown-diagram { overflow: auto; padding: 18px; margin: 18px 0; border: 1px solid var(--line-soft); border-radius: 9px; background: var(--surface-raised); text-align: center; }
-.markdown-diagram svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.markdown-diagram { max-width: 100%; overflow-x: auto; overflow-y: hidden; padding: 0; margin: 22px 0; overscroll-behavior-x: contain; scrollbar-color: var(--line) transparent; scrollbar-width: thin; }
+.markdown-diagram > div { width: max-content; min-width: 100%; }
+.markdown-diagram svg { display: block; max-width: none !important; height: auto; margin: 0 auto; }
 .markdown-diagram-loading,
 .markdown-diagram-error { padding: 12px 14px; margin: 18px 0; border: 1px solid var(--line-soft); border-radius: 8px; color: var(--text-secondary); background: var(--surface-raised); font-size: 12px; }
 .markdown-diagram-error p { margin: 0 0 8px; }

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" width="1200" height="460" role="img" aria-labelledby="title description">
+  <title id="title">Latency trend across three regions</title>
+  <desc id="description">A line chart showing the p95 latency rising and then recovering.</desc>
+  <rect width="1200" height="460" rx="18" fill="#f4f7fa"/>
+  <g stroke="#d8e0e8" stroke-width="2">
+    <path d="M110 90H1120M110 170H1120M110 250H1120M110 330H1120"/>
+    <path d="M110 70V370M362 70V370M615 70V370M868 70V370M1120 70V370"/>
+  </g>
+  <path d="M110 290L235 265L362 280L488 190L615 220L742 135L868 175L994 105L1120 150" fill="none" stroke="#277e8e" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M110 310L235 300L362 286L488 278L615 270L742 267L868 254L994 245L1120 235" fill="none" stroke="#6c7eaa" stroke-width="6" stroke-dasharray="12 12" stroke-linecap="round"/>
+  <g fill="#277e8e">
+    <circle cx="110" cy="290" r="9"/><circle cx="362" cy="280" r="9"/><circle cx="615" cy="220" r="9"/><circle cx="868" cy="175" r="9"/><circle cx="1120" cy="150" r="9"/>
+  </g>
+  <g fill="#44515e" font-family="system-ui, sans-serif" font-size="21">
+    <text x="110" y="415">09:00</text><text x="570" y="415">12:00</text><text x="1045" y="415">15:00</text>
+    <text x="28" y="96">240</text><text x="28" y="176">180</text><text x="28" y="256">120</text><text x="42" y="336">60</text>
+    <text x="110" y="48" font-size="25" font-weight="700">p95 response time (ms)</text>
+  </g>
+</svg>

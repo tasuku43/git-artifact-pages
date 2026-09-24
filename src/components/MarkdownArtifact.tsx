@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { isValidElement, useEffect, useState, type ReactNode } from 'react'
 import Markdown, { defaultUrlTransform, type Options as MarkdownOptions } from 'react-markdown'
 import rehypeRaw from 'rehype-raw'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
@@ -11,7 +11,12 @@ import { MermaidDiagram } from './MermaidDiagram'
 const markdownSanitizeSchema = {
   ...defaultSchema,
   clobberPrefix: 'md-',
+  protocols: {
+    ...defaultSchema.protocols,
+    src: [...(defaultSchema.protocols?.src ?? []), 'data'],
+  },
 }
+const safeDataImageUrl = /^data:image\/(?:png|jpe?g|gif|webp|avif);base64,/i
 const markdownRemarkPlugins: NonNullable<MarkdownOptions['remarkPlugins']> = [remarkGfm]
 const markdownRehypePlugins: NonNullable<MarkdownOptions['rehypePlugins']> = [
   rehypeRaw,
@@ -81,6 +86,17 @@ export function MarkdownArtifact({
           rehypePlugins={markdownRehypePlugins}
           urlTransform={(url, key) => transformMarkdownUrl(url, key, artifact, siteId)}
           components={{
+            pre: ({ children, ...props }) => {
+              const nodes = Array.isArray(children) ? children : [children]
+              const mermaidCode = nodes.find((node) => (
+                isValidElement<{ className?: string }>(node)
+                && node.props.className?.split(/\s+/).includes('language-mermaid')
+              ))
+              if (isValidElement<{ children?: ReactNode }>(mermaidCode)) {
+                return <MermaidDiagram source={String(mermaidCode.props.children).replace(/\n$/, '')} />
+              }
+              return <pre {...props}>{children}</pre>
+            },
             a: ({ href, children, ...props }) => {
               const isAppRoute = Boolean(href?.startsWith(`/${encodeURIComponent(siteId)}/`))
               const isSamePage = Boolean(href?.startsWith('#'))
@@ -122,6 +138,7 @@ function transformMarkdownUrl(
   artifact: ArtifactIndexEntry,
   siteId: string,
 ) {
+  if (value.startsWith('data:')) return key === 'src' && safeDataImageUrl.test(value) ? value : ''
   const safeValue = defaultUrlTransform(value)
   if (!safeValue) return ''
   if (safeValue.startsWith('#')) return safeValue.startsWith('#md-') ? safeValue : `#md-${safeValue.slice(1)}`

@@ -346,6 +346,39 @@ func TestBuildKeepsDifferentSourceFilesAsDistinctRoutes(t *testing.T) {
 	}
 }
 
+func TestReadMarkdownMetadataUsesGitHubCompatibleHeadingIDs(t *testing.T) {
+	filename := filepath.Join(t.TempDir(), "headings.md")
+	source := []byte(`# **Café** & 日本語
+## Repeated heading
+## Repeated heading
+## Punctuation: beta / alpha
+<h3 id="explicit-anchor">Custom HTML heading</h3>
+`)
+	if err := os.WriteFile(filename, source, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	metadata, err := readArtifactMetadata(filename, filepath.Base(filename))
+	if err != nil {
+		t.Fatalf("readArtifactMetadata() error = %v", err)
+	}
+	want := []TOCEntry{
+		{Level: 1, Text: "Café & 日本語", ID: "md-café--日本語"},
+		{Level: 2, Text: "Repeated heading", ID: "md-repeated-heading"},
+		{Level: 2, Text: "Repeated heading", ID: "md-repeated-heading-1"},
+		{Level: 2, Text: "Punctuation: beta / alpha", ID: "md-punctuation-beta--alpha"},
+		{Level: 3, Text: "Custom HTML heading", ID: "md-explicit-anchor"},
+	}
+	if len(metadata.toc) != len(want) {
+		t.Fatalf("TOC = %+v, want %+v", metadata.toc, want)
+	}
+	for index := range want {
+		if metadata.toc[index] != want[index] {
+			t.Errorf("TOC[%d] = %+v, want %+v", index, metadata.toc[index], want[index])
+		}
+	}
+}
+
 func TestBuildRejectsInvalidSiteID(t *testing.T) {
 	_, err := Build(context.Background(), BuildOptions{SiteID: "../sre", SourceDir: "."})
 	if err == nil || !strings.Contains(err.Error(), "invalid site identifier") {

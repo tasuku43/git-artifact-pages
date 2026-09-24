@@ -309,6 +309,7 @@ test('Markdown pages render safely with GFM, Mermaid, local assets, and extensio
   await page.goto('/sre/runbooks/service-recovery.md')
   await expect(page).toHaveURL(/\/sre\/runbooks\/service-recovery\.md$/)
   await expect(page.locator('iframe')).toHaveCount(0)
+  await expect(page.locator('.sidebar-panel .tree-artifact.is-active .tree-format-tag')).toHaveText('MD')
 
   const reader = page.getByTestId('markdown-document')
   await expect(reader.getByRole('heading', { level: 1, name: 'Service recovery' })).toBeVisible()
@@ -332,8 +333,225 @@ test('Markdown pages render safely with GFM, Mermaid, local assets, and extensio
   await expect(page.locator('iframe[title="Checkout latency incident review"]')).toBeVisible()
 })
 
+test('Markdown gallery covers typography, assets, links, safety, and fragment navigation', async ({ page }) => {
+  const requestedUrls: string[] = []
+  const localAssetPaths = [
+    '/_artifacts/sre/guides/assets/latency-trend.svg',
+    '/_artifacts/sre/guides/assets/latency%20trend.svg',
+    '/_artifacts/sre/runbooks/assets/request-path.svg',
+    '/_artifacts/sre/guides/assets/missing-image.svg',
+  ]
+  const assetResponses = localAssetPaths.map((path) => page.waitForResponse((response) => {
+    return new URL(response.url()).pathname === path
+  }))
+  let remoteImageRequested = false
+  await page.route('https://placehold.co/**', async (route) => {
+    remoteImageRequested = true
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="160"><rect width="480" height="160" fill="#dbeafe"/><text x="20" y="90">remote fixture image</text></svg>',
+    })
+  })
+  page.on('request', (request) => requestedUrls.push(request.url()))
+
+  await page.goto('/sre/guides/markdown-style-gallery.md')
+  await expect(page).toHaveURL(/\/sre\/guides\/markdown-style-gallery\.md$/)
+  const reader = page.getByTestId('markdown-document')
+  await expect(reader).toBeVisible()
+  await expect(page.locator('.sidebar-panel .tree-artifact.is-active .tree-format-tag')).toHaveText(['MD', 'MD'])
+
+  for (const level of [1, 2, 3, 4, 5, 6]) {
+    await expect(reader.getByRole('heading', { level }).first()).toBeVisible()
+  }
+  await expect(reader.getByText('A bare URL such as', { exact: false })).toBeVisible()
+  await expect(reader.getByRole('table')).toBeVisible()
+  await expect(reader.getByRole('columnheader', { name: 'p95 latency' })).toHaveCSS('text-align', 'right')
+  await expect(reader.getByRole('columnheader', { name: 'Change' })).toHaveCSS('text-align', 'center')
+  await expect(reader.locator('.contains-task-list input[type="checkbox"]')).toHaveCount(2)
+  await expect(reader.locator('details > summary')).toHaveText('Raw HTML disclosure')
+  await expect(reader.locator('.footnotes')).toBeVisible()
+  await reader.locator('details > summary').click()
+  await expect(reader.locator('details')).toHaveAttribute('open', '')
+  await expect(reader.locator('details')).toContainText('This native disclosure should remain usable')
+
+  const headingSizes = await reader.locator('h1, h2, h3, h4, h5, h6').evaluateAll((headings) => {
+    return headings.slice(0, 6).map((heading) => Number.parseFloat(getComputedStyle(heading).fontSize))
+  })
+  expect(headingSizes).toHaveLength(6)
+  expect(headingSizes[0]).toBeGreaterThan(headingSizes[1])
+  expect(headingSizes[1]).toBeGreaterThan(headingSizes[2])
+  expect(headingSizes[2]).toBeGreaterThan(headingSizes[3])
+  expect(headingSizes[3]).toBeGreaterThan(headingSizes[4])
+  expect(headingSizes[4]).toBeGreaterThan(headingSizes[5])
+  await expect(reader.locator('h2').first()).toHaveCSS('border-bottom-style', 'solid')
+  await expect(reader.locator('pre').first()).toHaveCSS('overflow', 'auto')
+
+  const images = {
+    local: reader.getByRole('img', { name: 'Latency trend across three regions' }),
+    encoded: reader.getByRole('img', { name: 'Encoded asset path with spaces' }),
+    parent: reader.getByRole('img', { name: 'Request path from the runbook' }),
+    remote: reader.getByRole('img', { name: 'Remote HTTPS fixture image' }),
+    inline: reader.getByRole('img', { name: 'Inline one-pixel PNG' }),
+    missing: reader.getByRole('img', { name: 'Missing local image' }),
+    crossSite: reader.getByRole('img', { name: "Another site's private image" }),
+    insecure: reader.getByRole('img', { name: 'Insecure HTTP image' }),
+  }
+  for (const [label, image] of Object.entries(images).slice(0, 5)) {
+    await expect.poll(
+      () => image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0),
+      { message: `${label} image should load successfully` },
+    ).toBeTruthy()
+  }
+  await expect.poll(() => images.missing.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth === 0)).toBeTruthy()
+  expect(remoteImageRequested).toBeTruthy()
+  expect(requestedUrls.some((url) => url.startsWith('https://placehold.co/480x160.svg?text=Remote+HTTPS+fixture'))).toBeTruthy()
+  expect((await Promise.all(assetResponses)).map((response) => response.status())).toEqual([200, 200, 200, 404])
+  expect(await images.inline.getAttribute('src')).toMatch(/^data:image\/png;base64,/)
+  expect(await images.crossSite.getAttribute('src')).toBeNull()
+  expect(await images.insecure.getAttribute('src')).toBeNull()
+  expect(requestedUrls.some((url) => url.startsWith('http://example.invalid/'))).toBeFalsy()
+  expect(requestedUrls.some((url) => url.includes('/_artifacts/frontend/'))).toBeFalsy()
+
+  await expect(reader.locator('script, iframe')).toHaveCount(0)
+  await expect(reader.locator('[onerror], [onclick], [onload]')).toHaveCount(0)
+  expect(await page.evaluate(() => (window as Window & {
+    __markdownUnsafeHtmlExecuted?: boolean
+    __markdownUnsafeHandlerExecuted?: boolean
+  }).__markdownUnsafeHtmlExecuted)).toBeUndefined()
+  expect(await page.evaluate(() => (window as Window & {
+    __markdownUnsafeHandlerExecuted?: boolean
+  }).__markdownUnsafeHandlerExecuted)).toBeUndefined()
+
+  const relatedRunbook = reader.getByRole('link', { name: 'Open the runbook' })
+  await expect(relatedRunbook).toHaveAttribute('href', '/sre/runbooks/service-recovery.md')
+  const contentsButton = page.getByRole('button', { name: 'Contents', exact: true })
+  await contentsButton.click()
+  const contents = page.getByRole('complementary', { name: 'Contents' })
+  await contents.getByRole('button', { name: '障害対応 — 日本語の見出し' }).click()
+  const japaneseHeading = reader.getByRole('heading', { level: 3, name: '障害対応 — 日本語の見出し' })
+  await expect(japaneseHeading).toHaveAttribute('id', 'md-障害対応--日本語の見出し')
+  await expect.poll(() => page.evaluate(() => decodeURIComponent(window.location.hash))).toBe('#md-障害対応--日本語の見出し')
+  await expect(japaneseHeading).toBeInViewport()
+  await reader.getByRole('link', { name: 'Jump to the Japanese heading' }).click()
+  await expect.poll(() => page.evaluate(() => decodeURIComponent(window.location.hash))).toBe('#md-障害対応--日本語の見出し')
+
+  await reader.getByRole('link', { name: 'Open the runbook' }).click()
+  await expect(page).toHaveURL(/\/sre\/runbooks\/service-recovery\.md$/)
+  await expect(page.getByTestId('markdown-document').getByRole('heading', { level: 1, name: 'Service recovery' })).toBeVisible()
+})
+
+test('Markdown retrospective stays readable on narrow screens and supports theme styling', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/sre/reports/latency-retrospective.md')
+
+  const reader = page.getByTestId('markdown-document')
+  await expect(reader.getByRole('heading', { level: 2, name: 'Outcome at a glance' })).toBeVisible()
+  await expect(reader.getByRole('heading', { level: 1 })).toHaveCount(0)
+  const dimensions = await reader.evaluate((element) => {
+    const table = element.querySelector('table')!
+    return {
+      viewportWidth: document.documentElement.clientWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      tableClientWidth: table.clientWidth,
+      tableScrollWidth: table.scrollWidth,
+      readerClientWidth: element.clientWidth,
+    }
+  })
+  expect(dimensions.documentWidth).toBeLessThanOrEqual(dimensions.viewportWidth)
+  expect(dimensions.tableScrollWidth).toBeGreaterThan(dimensions.tableClientWidth)
+  expect(dimensions.readerClientWidth).toBeLessThanOrEqual(dimensions.viewportWidth)
+
+  const initialHeadingColor = await reader.locator('h2').first().evaluate((element) => getComputedStyle(element).color)
+  await page.getByRole('button', { name: /Color theme:/ }).click()
+  await page.getByRole('menuitemradio', { name: 'Dark' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  const darkHeadingColor = await reader.locator('h2').first().evaluate((element) => getComputedStyle(element).color)
+  expect(darkHeadingColor).not.toBe(initialHeadingColor)
+})
+
+test('Mermaid catalog renders every fixture type supported by the bundled core and preserves unsupported source', async ({ page }) => {
+  test.setTimeout(180_000)
+  page.setDefaultTimeout(150_000)
+  const supportedTypes = [
+    'flowchart', 'graph', 'flowchart-elk', 'swimlane-beta', 'journey', 'gantt', 'eventmodeling',
+    'pie', 'quadrantchart', 'xychart-beta', 'sankey-beta', 'radar-beta', 'treemap-beta', 'venn-beta',
+    'erdiagram', 'classdiagram', 'classdiagram-v2', 'gitgraph', 'c4context', 'architecture-beta',
+    'block', 'packet-beta', 'kanban', 'treeview-beta', 'sequencediagram', 'statediagram-v2',
+    'statediagram', 'mindmap', 'requirementdiagram', 'timeline', 'ishikawa-beta', 'wardley-beta',
+    'cynefin-beta', 'railroad-beta', 'railroad-ebnf-beta', 'railroad-abnf-beta', 'railroad-peg-beta', 'info',
+  ]
+  const unsupportedTypes = ['usecase-beta', 'zenuml']
+
+  await page.goto('/sre/diagrams/mermaid-catalog.md')
+  const reader = page.getByTestId('markdown-document')
+  await expect(reader.getByRole('heading', { level: 1, name: 'Mermaid rendering catalog' })).toBeVisible()
+  await expect(reader.locator('.markdown-diagram-loading')).toHaveCount(0, { timeout: 150_000 })
+  await expect(page.locator('.sidebar-panel .tree-artifact.is-active .tree-format-tag')).toHaveText(['MD', 'MD'])
+
+  for (const type of supportedTypes) {
+    const diagram = reader.locator(`figure.markdown-diagram[data-diagram-type="${type}"]`)
+    await expect(diagram, `${type} should render as an SVG diagram`).toHaveCount(1)
+    await expect(diagram.locator('svg').first()).toBeVisible()
+    await expect(diagram.locator(':scope > div > svg')).toHaveAttribute('xmlns', 'http://www.w3.org/2000/svg')
+  }
+  await expect(reader.locator('.markdown-diagram-error')).toHaveCount(unsupportedTypes.length)
+  for (const type of unsupportedTypes) {
+    const fallback = reader.locator(`.markdown-diagram-error[data-diagram-type="${type}"]`)
+    await expect(fallback).toBeVisible()
+    await expect(fallback.locator('pre code')).not.toBeEmpty()
+  }
+  expect(await reader.locator('figure.markdown-diagram').count()).toBe(supportedTypes.length)
+  expect(await reader.locator('.markdown-diagram-error').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-diagram-type')).sort())).toEqual([...unsupportedTypes].sort())
+
+  const diagramFrame = reader.locator('figure.markdown-diagram').first()
+  await expect(diagramFrame).toHaveCSS('border-top-width', '0px')
+  await expect(diagramFrame).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+  expect(await diagramFrame.evaluate((element) => element.closest('pre'))).toBeNull()
+  const wideDiagram = reader.locator('figure.markdown-diagram[data-diagram-type="flowchart-elk"]')
+  const wideDiagramSize = await wideDiagram.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }))
+  expect(wideDiagramSize.scrollWidth).toBeGreaterThan(wideDiagramSize.clientWidth)
+  await wideDiagram.evaluate((element) => { element.scrollLeft = element.scrollWidth })
+  expect(await wideDiagram.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0)
+
+  const styledFlowchart = reader.locator('figure.markdown-diagram[data-diagram-type="flowchart"] svg')
+  const serviceNode = styledFlowchart.locator('.node').filter({ hasText: 'Service' })
+  await expect(serviceNode).toHaveClass(/healthy/)
+  await expect.poll(() => serviceNode.locator('rect.label-container').evaluate((element) => getComputedStyle(element).fill)).toBe('rgb(220, 252, 231)')
+  const recoveryNode = styledFlowchart.locator('.node').filter({ hasText: 'Recovery' })
+  await expect(recoveryNode).toHaveClass(/warning/)
+  await expect.poll(() => recoveryNode.locator('rect.label-container').evaluate((element) => getComputedStyle(element).stroke)).toBe('rgb(217, 119, 6)')
+  const gatewayNode = styledFlowchart.locator('.node').filter({ hasText: 'Healthy?' })
+  await expect.poll(() => gatewayNode.locator('polygon').evaluate((element) => getComputedStyle(element).fill)).toBe('rgb(219, 234, 254)')
+
+  await page.getByRole('button', { name: /Color theme:/ }).click()
+  await page.getByRole('menuitemradio', { name: 'Light' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  const flowNode = reader.locator('figure[data-diagram-type="flowchart"] svg .node rect').first()
+  const lightFlowNodeFill = await flowNode.evaluate((element) => getComputedStyle(element).fill)
+  await page.getByRole('button', { name: 'Color theme: Light' }).click()
+  await page.getByRole('menuitemradio', { name: 'Dark' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await expect.poll(() => flowNode.evaluate((element) => getComputedStyle(element).fill)).not.toBe(lightFlowNodeFill)
+  await expect(reader.locator('.markdown-diagram-loading')).toHaveCount(0, { timeout: 150_000 })
+  await expect(reader.locator('figure.markdown-diagram')).toHaveCount(supportedTypes.length)
+  await expect(reader.locator('.markdown-diagram-error')).toHaveCount(unsupportedTypes.length)
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  const narrowPageWidth = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+  }))
+  expect(narrowPageWidth.document).toBeLessThanOrEqual(narrowPageWidth.viewport)
+  expect(await wideDiagram.evaluate((element) => element.scrollWidth)).toBeGreaterThan(await wideDiagram.evaluate((element) => element.clientWidth))
+})
+
 test('the command palette shortcut works while the artifact iframe has focus', async ({ page }) => {
   await page.goto('/sre/incidents/checkout-latency/index.html')
+  await expect(page.locator('.sidebar-panel .tree-artifact.is-active .tree-format-tag')).toHaveCount(0)
   const artifact = page.frameLocator('iframe[title="Checkout latency incident review"]')
   const summaryHeading = artifact.getByRole('heading', { name: 'Summary' })
   await expect(summaryHeading).toBeVisible()

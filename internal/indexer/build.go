@@ -18,10 +18,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
+	goldmarkhtml "github.com/yuin/goldmark/renderer/html"
+	"github.com/yuin/goldmark/text"
+	"github.com/yuin/goldmark/util"
 	"golang.org/x/net/html"
 )
 
@@ -395,7 +400,11 @@ func readArtifactMetadata(filename, basename string) (artifactHTMLMetadata, erro
 	}
 	markdown := goldmark.New(
 		goldmark.WithExtensions(extension.GFM),
-		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
+		goldmark.WithRendererOptions(goldmarkhtml.WithUnsafe()),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+			parser.WithASTTransformers(util.Prioritized(&githubHeadingIDTransformer{}, 100)),
+		),
 	)
 	var rendered bytes.Buffer
 	if err := markdown.Convert(source, &rendered); err != nil {
@@ -410,6 +419,44 @@ func readArtifactMetadata(filename, basename string) (artifactHTMLMetadata, erro
 		metadata.toc[index].ID = "md-" + metadata.toc[index].ID
 	}
 	return metadata, nil
+}
+
+type githubHeadingIDTransformer struct{}
+
+func (*githubHeadingIDTransformer) Transform(document *ast.Document, reader text.Reader, _ parser.Context) {
+	used := make(map[string]struct{})
+	var visit func(ast.Node)
+	visit = func(node ast.Node) {
+		if heading, ok := node.(*ast.Heading); ok {
+			base := githubHeadingSlug(string(heading.Text(reader.Source())))
+			id := base
+			for suffix := 1; ; suffix++ {
+				if _, exists := used[id]; !exists {
+					break
+				}
+				id = base + "-" + strconv.Itoa(suffix)
+			}
+			used[id] = struct{}{}
+			heading.SetAttributeString("id", id)
+		}
+		for child := node.FirstChild(); child != nil; child = child.NextSibling() {
+			visit(child)
+		}
+	}
+	visit(document)
+}
+
+func githubHeadingSlug(value string) string {
+	var slug strings.Builder
+	for _, character := range strings.ToLower(value) {
+		switch {
+		case character == ' ':
+			slug.WriteByte('-')
+		case character == '-' || character == '_' || unicode.IsLetter(character) || unicode.IsNumber(character) || unicode.IsMark(character):
+			slug.WriteRune(character)
+		}
+	}
+	return slug.String()
 }
 
 func readArtifactHTMLDocument(source io.Reader) (artifactHTMLMetadata, error) {

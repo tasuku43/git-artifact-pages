@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240" width="640" height="240" role="img" aria-label="Encoded path asset">
+  <rect width="640" height="240" rx="16" fill="#e4f0f1"/>
+  <path d="M40 180L150 145L255 158L365 82L470 112L600 42" fill="none" stroke="#246f79" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="600" cy="42" r="10" fill="#246f79"/>
+</svg>
