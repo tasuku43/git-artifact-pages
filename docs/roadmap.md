@@ -23,7 +23,8 @@ Target user experience:
 - /:site shows the site home and recent artifacts.
 - /:site/* deep-links to an artifact.
 - Left sidebar shows a searchable/filterable artifact tree.
-- Main pane renders the selected artifact in an iframe.
+- Main pane renders HTML in an iframe and Markdown in the native reader.
+- Indexed document routes retain their source-relative filename and extension.
 - An optional right panel switches between indexed contents and artifact details (last committer, update date, and source).
 - Direct navigation and reload restore the same state.
 
@@ -39,7 +40,7 @@ source repository + sourcePath
 _indexes/<site>.json
 ~~~
 
-The standalone `artifact-pages` CLI consumes one publishable static content directory inside a Git working tree; it is not a `git` subcommand. HTML must already be ready to serve; the index builder does not run templates or another site's build, bundle CSS/JavaScript, rewrite URLs, or copy files. It recursively indexes every `.html`/`.htm` file except a root-level `index.html`/`index.htm` (the site landing document); nested index documents use their parent directory as their route, and other filenames retain their filename in storage while using an extensionless logical route. There are no implicit path exclusions, so the selected directory must not include source-only HTML partials such as `_includes` unless they are intended to be published as artifacts.
+The standalone `artifact-pages` CLI consumes one publishable static content directory inside a Git working tree; it is not a `git` subcommand. HTML and Markdown must already be ready to publish; the index builder does not run templates or another site's build, bundle CSS/JavaScript, rewrite URLs, or copy files. It recursively indexes every `.html`, `.htm`, and `.md` file, including root and nested `index.html`; every indexed document uses its exact source-relative filename, extension included, as its logical route. Markdown metadata uses its first H1 for the display title and extracts heading IDs for Contents. The product reader supports GFM and Mermaid code fences. There are no implicit path exclusions, so the selected directory must not include source-only HTML or Markdown partials unless they are intended to be published as artifacts.
 
 The builder extracts display metadata and computes update times from Git history and working-tree changes. It records the Git committer name for the latest relevant change, without resolving a GitHub account or publishing the committer email. Untracked files, including ignored generated output, remain indexable, but their update time falls back to filesystem modification times and they have no `lastCommitter`. The command does not copy artifact bytes or publish to a hosting provider; a later publish step should copy the selected static tree unchanged so its relative resources continue to work.
 

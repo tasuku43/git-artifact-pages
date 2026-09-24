@@ -74,10 +74,10 @@ Examples:
 /platform
 ~~~
 
-Therefore /sre/incidents/123 means:
+Therefore /sre/incidents/123.html means:
 
 - site: sre
-- logical artifact route: incidents/123
+- logical artifact route: incidents/123.html
 
 A site is a logical destination, not a repository identity. The initial builder maps one repository source directory to one site. Combining sources from multiple repositories is deferred until a concrete use case requires it.
 
@@ -97,13 +97,14 @@ Example:
 
 ~~~text
 user URL:
-/sre/incidents/123
+/sre/incidents/123.html
 
 internal artifact URL:
-/_artifacts/sre/incidents/123/index.html
+/_artifacts/sre/incidents/123.html
 ~~~
 
-The SPA resolves the logical route and loads the corresponding artifact.
+The SPA resolves the logical route and loads the corresponding artifact. Indexed document routes
+retain their full source-relative path, filename, and extension; `/:site` remains the separate site-home route.
 
 ## 5. Storage projection
 
@@ -145,7 +146,7 @@ Example:
 
 ~~~json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "site": {
     "id": "sre",
     "title": "SRE"
@@ -153,10 +154,11 @@ Example:
   "generatedAt": "2026-09-22T00:00:00Z",
   "artifacts": [
     {
-      "id": "incidents/123",
+      "id": "incidents/123.html",
       "title": "Incident 123 Review",
-      "path": "incidents/123",
-      "artifactUrl": "/_artifacts/sre/incidents/123/index.html",
+      "path": "incidents/123.html",
+      "format": "html",
+      "artifactUrl": "/_artifacts/sre/incidents/123.html",
       "updatedAt": "2026-09-22T00:00:00Z",
       "lastCommitter": {
         "name": "Octocat"
@@ -175,19 +177,29 @@ Example:
 }
 ~~~
 
-The exact schema will mature with implementation. The important public contract is one index per site.
+The important public contract is one index per site. Schema version 2 adds the `format` field
+(`html` or `markdown`) and uses the exact source-relative document path as its stable identity.
 
-The initial builder indexes `.html` and `.htm` documents as individual artifacts. A document named `index.html` or `index.htm` uses its containing directory as its logical route; other HTML filenames use their basename without the extension. `filename` and `artifactUrl` retain the actual source filename. Two documents that resolve to the same logical route are rejected rather than silently shadowing one another.
+The builder indexes `.html`, `.htm`, and `.md` documents as individual artifacts. `id` and `path`
+are the exact source-relative path, including filename and extension; `artifactUrl` points to the
+unchanged file under the artifact tree. `index.html`, `README.md`, and other documents are opened
+explicitly and do not act as implicit directory landing pages. Thus `foo.html` and `foo.md` are
+distinct pages and routes. Static resources such as CSS, JavaScript, images, and fonts are available
+to pages but are not independently indexed.
+
+For Markdown, the first H1 supplies the display title, with a readable filename fallback when there
+is no H1. Markdown headings are indexed for Contents, and generated heading IDs match the reader.
+HTML retains its `<title>`-based display title and existing precomputed heading behavior.
 
 ### Publishable source directory
 
-The builder's `sourcePath` is the exact static content tree intended to be served beneath `/_artifacts/<site>/`. It may contain directly authored static files or output from another site generator, but HTML must already be ready for a browser: this builder does not expand templates, run site generators, bundle CSS or JavaScript, rewrite resource URLs, or copy files.
+The builder's `sourcePath` is the exact static content tree intended to be served beneath `/_artifacts/<site>/`. It may contain directly authored static files or output from another site generator, but HTML and Markdown must already be ready to publish: this builder does not expand templates, run site generators, bundle CSS or JavaScript, rewrite resource URLs, or copy files.
 
-The builder recursively indexes every `.html` and `.htm` file under that tree, except a root-level `index.html` or `index.htm`, which is treated as site-level content and omitted from the artifact index. Nested `index.html` and `index.htm` files are indexed at their containing-directory route. No directory-name or dotfile heuristic excludes pages; for example, HTML under `_includes/` is indexed if that directory is inside `sourcePath`. Select a publishable root that contains the pages to expose and excludes source-only templates or partials.
+The builder recursively indexes every `.html`, `.htm`, and `.md` file under that tree, including root-level and nested `index.html` files. Every page uses its full source-relative filename and extension in its route; index files do not alias their parent directories. No directory-name or dotfile heuristic excludes pages; for example, HTML or Markdown under `_includes/` is indexed if that directory is inside `sourcePath`. Select a publishable root that contains the pages to expose and excludes source-only templates or partials.
 
 Local resources referenced by those pages must also be present under `sourcePath`, with their relative directory structure intact. External resources may be referenced over HTTPS under the artifact resource policy described below. The index builder leaves the tree unchanged and emits metadata only; a later publish step is responsible for copying the tree unchanged beneath the site's artifact namespace.
 
-`sourcePath` must be inside the current Git working tree. Tracked source files provide commit-based `updatedAt` and `lastCommitter` metadata. Files without Git history, including ignored or generated output, remain indexable; for them `updatedAt` falls back to filesystem modification times and `lastCommitter` is omitted. Prefer tracked, publishable HTML when Git-derived details are required.
+`sourcePath` must be inside the current Git working tree. Tracked source files provide commit-based `updatedAt` and `lastCommitter` metadata. Files without Git history, including ignored or generated output, remain indexable; for them `updatedAt` falls back to filesystem modification times and `lastCommitter` is omitted. Prefer tracked, publishable documents when Git-derived details are required.
 
 The index should eventually contain enough information to support:
 
@@ -291,7 +303,14 @@ The left sidebar derives a tree/navigation model from the site index. It may sup
 
 ### Main pane
 
-The selected artifact is loaded from /_artifacts/* into the iframe.
+HTML artifacts are loaded from `/_artifacts/*` into the iframe. Markdown artifacts are rendered in
+the application's native reader within the same workspace.
+
+The Markdown reader supports CommonMark and GitHub Flavored Markdown, including tables, task lists,
+strikethrough, autolinks, and footnotes. Mermaid code fences are rendered client-side in strict
+security mode, with diagram interactions disabled. Embedded raw HTML is sanitized before entering
+the application DOM. Relative assets resolve from the Markdown file's location. Links to other
+indexed Markdown or HTML documents navigate to their extension-preserving application routes.
 
 ### Right sidebar
 
@@ -408,7 +427,7 @@ Candidate metadata:
 - optional tags
 - optional description
 
-Initial title extraction may use the HTML title element.
+HTML display-title extraction uses the HTML title element. Markdown display titles use the first H1.
 
 Sidecar metadata may be added later if HTML alone is insufficient.
 
@@ -457,6 +476,8 @@ Important E2E flows include:
 - deep-link directly to an artifact
 - reload preserves route
 - iframe loads nested relative artifact assets, modules, and data from the artifact's site namespace
+- Markdown routes retain `.md`, render H1 / GFM / Mermaid, and navigate through Contents links
+- relative Markdown images resolve within the same site's artifact tree
 - CSP permits external HTTPS resources and blocks external HTTP resource fetches
 - missing artifact resources return 404 rather than the SPA shell
 - artifact styles remain inside the iframe document
@@ -493,7 +514,7 @@ Default (*)    → SPA shell
 
 The first two patterns do not overlap, so their relative order is not semantically important. The default behavior is the fallback.
 
-SPA routes such as /sre/incidents/123 must resolve to the application shell rather than being looked up as literal S3 object keys. The AWS adapter will therefore need an SPA fallback/rewrite mechanism.
+SPA routes such as `/sre/incidents/123.html` must resolve to the application shell rather than being looked up as literal S3 object keys. The AWS adapter will therefore need an SPA fallback/rewrite mechanism.
 
 The S3 bucket remains private and CloudFront reads it through Origin Access Control.
 
