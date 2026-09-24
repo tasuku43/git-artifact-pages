@@ -1,45 +1,105 @@
+import { useEffect, useState } from 'react'
+import type { ThemeMode } from '../domain/theme'
 import type { SiteIndex } from '../domain/index'
+import { CommandPalette, type PaletteCommand } from './CommandPalette'
 import { Icon } from './Icon'
 
 export function SitePicker({
   indexes,
   onNavigate,
+  themeMode = 'system',
+  onSetThemeMode,
 }: {
   indexes: SiteIndex[]
   onNavigate: (href: string) => void
+  themeMode?: ThemeMode
+  onSetThemeMode?: (mode: ThemeMode) => void
 }) {
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const sortedIndexes = [...indexes].sort((left, right) => left.site.title.localeCompare(right.site.title))
+  const commands: PaletteCommand[] = [
+    {
+      title: 'Use light theme',
+      subtitle: themeMode === 'light' ? 'Current' : undefined,
+      onSelect: () => onSetThemeMode?.('light'),
+    },
+    {
+      title: 'Use dark theme',
+      subtitle: themeMode === 'dark' ? 'Current' : undefined,
+      onSelect: () => onSetThemeMode?.('dark'),
+    },
+    {
+      title: 'Use system theme',
+      subtitle: themeMode === 'system' ? 'Current' : undefined,
+      onSelect: () => onSetThemeMode?.('system'),
+    },
+  ]
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
+        event.preventDefault()
+        setPaletteOpen((open) => !open)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
-    <main className="site-picker-page">
-      <div className="site-picker-content">
-        <p className="brand-label"><span className="brand-mark">G</span> Git Artifact Pages</p>
-        <p className="eyebrow">Artifact library</p>
-        <h1>Choose a site</h1>
-        <p className="site-picker-lede">Browse published artifacts from the sites available in this environment.</p>
-        {sortedIndexes.length === 0 ? (
-          <p className="empty-note">No site indexes were found.</p>
-        ) : (
-          <div className="site-picker-list">
-            {sortedIndexes.map(({ site, artifacts, generatedAt }) => (
-              <button
-                className="site-picker-row"
-                key={site.id}
-                onClick={() => onNavigate(`/${encodeURIComponent(site.id)}`)}
-              >
-                <span className="site-mark" aria-hidden="true">{site.title.slice(0, 1).toUpperCase()}</span>
-                <span className="site-picker-main">
-                  <strong>{site.title}</strong>
-                  <span className="mono">/{site.id}</span>
-                </span>
-                <span className="site-picker-count">{artifacts.length} artifacts · updated {formatDate(generatedAt)}</span>
-                <Icon name="arrow" size={16} />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </main>
+    <>
+      <main className="site-picker-page">
+        <div className="site-picker-content">
+          <p className="brand-label"><span className="brand-mark">G</span> Git Artifact Pages</p>
+          <p className="eyebrow">Artifact library</p>
+          <h1>Choose a site</h1>
+          <p className="site-picker-lede">Browse published artifacts from the sites available in this environment.</p>
+          <button
+            type="button"
+            className="site-picker-search-trigger"
+            aria-label="Search sites (⌘ K)"
+            onClick={() => setPaletteOpen(true)}
+          >
+            <Icon name="search" size={16} />
+            <span>Search sites...</span>
+            <kbd>⌘ K</kbd>
+          </button>
+          {sortedIndexes.length === 0 ? (
+            <p className="empty-note">No site indexes were found.</p>
+          ) : (
+            <div className="site-picker-list">
+              {sortedIndexes.map(({ site, artifacts, generatedAt }) => (
+                <button
+                  className="site-picker-row"
+                  key={site.id}
+                  onClick={() => onNavigate(`/${encodeURIComponent(site.id)}`)}
+                >
+                  <span className="site-mark" aria-hidden="true">{site.title.slice(0, 1).toUpperCase()}</span>
+                  <span className="site-picker-main">
+                    <strong>{site.title}</strong>
+                    <span className="mono">/{site.id}</span>
+                  </span>
+                  <span className="site-picker-count">{artifacts.length} artifacts · updated {formatDate(generatedAt)}</span>
+                  <Icon name="arrow" size={16} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+      {paletteOpen ? (
+        <CommandPalette
+          seed=""
+          context="sites"
+          indexes={indexes}
+          commands={commands}
+          loading={false}
+          onClose={() => setPaletteOpen(false)}
+          onNavigate={onNavigate}
+          onJumpToHeading={() => undefined}
+        />
+      ) : null}
+    </>
   )
 }
 

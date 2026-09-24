@@ -10,6 +10,7 @@ test('nginx index listing discovers sites and opens a site home', async ({ page 
 
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'Choose a site' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Search sites (⌘ K)' })).toBeVisible()
   await expect(page.getByRole('button', { name: /SRE/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Frontend/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /HTML Showcase/ })).toBeVisible()
@@ -17,6 +18,92 @@ test('nginx index listing discovers sites and opens a site home', async ({ page 
   await page.getByRole('button', { name: /SRE/ }).click()
   await expect(page).toHaveURL(/\/sre$/)
   await expect(page.getByRole('heading', { name: 'SRE', exact: true })).toBeVisible()
+})
+
+test('the root command palette searches sites first and opens the selected site', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Choose a site' })).toBeVisible()
+  await page.keyboard.press('Control+k')
+
+  const palette = page.getByRole('dialog', { name: 'Command palette' })
+  await expect(palette).toBeVisible()
+  const search = palette.getByRole('textbox', { name: 'Search artifacts, sites, commands, and headings' })
+  const paletteCenterOffset = async () => palette.evaluate((element) => {
+    const bounds = element.getBoundingClientRect()
+    return Math.abs(bounds.top + bounds.height / 2 - window.innerHeight / 2)
+  })
+  await expect.poll(paletteCenterOffset).toBeLessThan(1)
+  await expect(search).toHaveAttribute('placeholder', 'Search sites and pages...')
+  await expect(palette.getByRole('option', { name: /SRE/ })).toBeVisible()
+  await expect(palette.getByRole('option', { name: /Frontend/ })).toBeVisible()
+
+  await search.fill('cloud')
+  await expect(palette.getByRole('option', { name: /Cloud spend review/ })).toBeVisible()
+  await expect(palette.getByRole('option')).toHaveCount(1)
+  await expect(palette.getByText('Pages in HTML Showcase')).toBeVisible()
+  await expect.poll(paletteCenterOffset).toBeLessThan(1)
+
+  await search.fill('front')
+  await expect.poll(paletteCenterOffset).toBeLessThan(1)
+  const frontend = palette.getByRole('option', { name: /Frontend/ })
+  await expect(frontend).toBeVisible()
+  await search.press('Enter')
+
+  await expect(palette).toBeHidden()
+  await expect(page).toHaveURL(/\/frontend$/)
+  await expect(page.getByRole('heading', { name: 'Frontend', exact: true })).toBeVisible()
+})
+
+test('context prioritizes local pages while @ and > explicitly scope results', async ({ page }) => {
+  await page.goto('/sre')
+  await page.getByRole('button', { name: 'Open command palette (⌘ K)' }).click()
+
+  const palette = page.getByRole('dialog', { name: 'Command palette' })
+  const search = palette.getByRole('textbox', { name: 'Search artifacts, sites, commands, and headings' })
+  await expect(search).toHaveAttribute('placeholder', 'Search pages, sites, headings, and commands...')
+  await expect(palette.locator('.palette-scope')).toHaveText('SRE first')
+
+  await search.fill('incident')
+  await expect(palette.getByRole('option', { name: /Checkout latency incident review/ })).toBeVisible()
+  await expect(palette.getByRole('option', { name: /Incident intake/ })).toBeVisible()
+  await expect(palette.locator('.palette-section-title')).toHaveText([
+    'Pages in SRE',
+    'Pages in HTML Showcase',
+  ])
+
+  await search.fill('Button guidelines')
+  const remotePage = palette.getByRole('option', { name: /Button guidelines/ })
+  await expect(remotePage).toBeVisible()
+  await expect(palette.getByRole('option')).toHaveCount(1)
+  await expect(palette.getByText('Pages in Frontend')).toBeVisible()
+
+  await search.fill('@front')
+  await expect(palette.getByRole('option', { name: /Frontend/ })).toBeVisible()
+  await expect(palette.getByRole('option')).toHaveCount(1)
+  await expect(palette.getByText('Pages in Frontend')).toHaveCount(0)
+
+  await search.fill('>theme')
+  await expect(palette.locator('.palette-section-title')).toHaveText(['Commands'])
+  await expect(palette.getByRole('option', { name: 'Use light theme' })).toBeVisible()
+  await expect(palette.getByRole('option', { name: 'Use dark theme' })).toBeVisible()
+  await expect(palette.getByRole('option', { name: 'Use system theme' })).toBeVisible()
+  await expect(palette.getByRole('option')).toHaveCount(3)
+})
+
+test('artifact-context # search opens a heading and closes the palette', async ({ page }) => {
+  await page.goto('/sre/incidents/checkout-latency')
+  await page.getByRole('button', { name: 'Open command palette (⌘ K)' }).click()
+
+  const palette = page.getByRole('dialog', { name: 'Command palette' })
+  const search = palette.getByRole('textbox', { name: 'Search artifacts, sites, commands, and headings' })
+  await search.fill('#root')
+  await expect(palette.getByRole('option', { name: /Root cause/ })).toBeVisible()
+  await expect(palette.getByRole('option')).toHaveCount(1)
+  await expect(palette.getByText('Pages in SRE')).toHaveCount(0)
+  await search.press('Enter')
+
+  await expect(palette).toBeHidden()
+  await expect(page).toHaveURL(/#root-cause$/)
 })
 
 test('multi-file artifacts stay in their site namespace when relative asset paths overlap', async ({ page }) => {

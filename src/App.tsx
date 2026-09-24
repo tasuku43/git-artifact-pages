@@ -95,7 +95,14 @@ function App() {
   if (route.kind === 'sites') {
     if (catalog.status === 'loading') return <StatusPage title="Sites" message="Loading sites…" />
     if (catalog.status === 'error') return <ErrorPage title="Sites" error={catalog.error} />
-    return <SitePicker indexes={catalog.data} onNavigate={navigate} />
+    return (
+      <SitePicker
+        indexes={catalog.data}
+        onNavigate={navigate}
+        themeMode={themeMode}
+        onSetThemeMode={setThemeMode}
+      />
+    )
   }
 
   return (

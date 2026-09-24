@@ -2,15 +2,15 @@ import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { storyIndexes } from '../stories/fixtures'
 import type { ArtifactIndexEntry, SiteIndex } from '../domain/index'
-import { CommandPalette, type PaletteCommand } from './CommandPalette'
+import { CommandPalette, type PaletteCommand, type PaletteContext } from './CommandPalette'
 
 const indexes = storyIndexes as SiteIndex[]
 const currentIndex = indexes[0]
 const currentArtifact = currentIndex.artifacts[0] as ArtifactIndexEntry
 
-type PaletteStoryArgs = { seed: string }
+type PaletteStoryArgs = { seed: string; context: PaletteContext }
 
-function PaletteStory({ seed }: PaletteStoryArgs) {
+function PaletteStory({ seed, context }: PaletteStoryArgs) {
   const [isOpen, setIsOpen] = useState(true)
   const commands: PaletteCommand[] = [
     { title: 'Toggle sidebar', shortcut: '⌘ B', onSelect: () => undefined },
@@ -24,6 +24,7 @@ function PaletteStory({ seed }: PaletteStoryArgs) {
   return isOpen ? (
     <CommandPalette
       seed={seed}
+      context={context}
       indexes={indexes}
       currentIndex={currentIndex}
       currentArtifact={currentArtifact}
@@ -42,12 +43,17 @@ function PaletteStory({ seed }: PaletteStoryArgs) {
 
 const meta = {
   title: 'Navigation/Command palette',
-  args: { seed: '' },
+  args: { seed: '', context: 'site' },
   argTypes: {
     seed: {
       control: 'radio',
       options: ['', 'checkout', 'pltf', 'chk lat', '@', '>', '#'],
-      description: 'Try fuzzy terms or switch to a search scope.',
+      description: 'Try fuzzy terms or prefix with @, >, or # to explicitly scope results.',
+    },
+    context: {
+      control: 'radio',
+      options: ['sites', 'site', 'artifact'],
+      description: 'Set the route context that determines result priority.',
     },
   },
   render: (args: PaletteStoryArgs) => <PaletteStory key={args.seed} {...args} />,
@@ -58,8 +64,16 @@ type Story = StoryObj<typeof meta>
 
 export const RecentAndCommands: Story = {}
 
+export const RootSiteSelection: Story = {
+  args: { context: 'sites' },
+}
+
+export const SiteHomePages: Story = {
+  args: { context: 'site' },
+}
+
 export const SearchArtifacts: Story = {
-  args: { seed: 'checkout' },
+  args: { context: 'artifact', seed: 'checkout' },
 }
 
 export const FuzzySearchInlineTrace: Story = {
@@ -75,5 +89,5 @@ export const Commands: Story = {
 }
 
 export const Headings: Story = {
-  args: { seed: '#' },
+  args: { context: 'artifact', seed: '#' },
 }

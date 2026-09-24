@@ -447,6 +447,7 @@ export function ArtifactWorkspace({
       {paletteSeed !== null ? (
         <CommandPalette
           seed={paletteSeed}
+          context={route.artifactPath ? 'artifact' : 'site'}
           indexes={paletteIndexes}
           currentIndex={index}
           currentArtifact={currentArtifact}
