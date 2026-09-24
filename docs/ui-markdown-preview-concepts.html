@@ -160,7 +160,7 @@
         <div class="workspace-main">
           <header class="context-bar">
             <nav class="breadcrumbs" aria-label="Artifact path">
-              <span>runbooks</span><span>/</span><span class="current">service-recovery</span>
+              <span>runbooks</span><span>/</span><span class="current">service-recovery.md</span>
             </nav><button class="bar-action active">☷ <span class=
             "long-label">Contents</span></button><button class="bar-action">ⓘ <span class=
             "long-label">Details</span></button><button class="bar-action" aria-label=
@@ -255,7 +255,7 @@
         <div class="workspace-main">
           <header class="context-bar">
             <nav class="breadcrumbs" aria-label="Artifact path">
-              <span>runbooks</span><span>/</span><span class="current">service-recovery</span>
+              <span>runbooks</span><span>/</span><span class="current">service-recovery.md</span>
             </nav><button class="bar-action active">☷ <span class=
             "long-label">Contents</span></button><button class="bar-action">ⓘ <span class=
             "long-label">Details</span></button><button class="bar-action" aria-label=
@@ -352,7 +352,7 @@
         <div class="workspace-main">
           <header class="context-bar">
             <nav class="breadcrumbs" aria-label="Artifact path">
-              <span>runbooks</span><span>/</span><span class="current">service-recovery</span>
+              <span>runbooks</span><span>/</span><span class="current">service-recovery.md</span>
             </nav><button class="bar-action active">☷ <span class=
             "long-label">Contents</span></button><button class="bar-action">ⓘ <span class=
             "long-label">Details</span></button>
@@ -431,11 +431,11 @@ flowchart LR
       </div>
     </section>
     <aside class="route-note">
-      <strong>Route proposal:</strong> A Markdown file is an ordinary, explicitly opened page—not
-      an implicit directory landing page. Keep <code>README.md</code> addressable as
-      <code>/README.md</code>. Preserve the existing HTML route behavior while retaining the
-      Markdown extension, so <code>foo.html → /foo</code> and <code>foo.md → /foo.md</code> remain
-      distinct pages and can coexist.
+      <strong>Route proposal:</strong> Keep the source extension in every indexed document’s URL:
+      <code>foo.html → /foo.html</code>, <code>foo.md → /foo.md</code>, and
+      <code>README.md → /README.md</code>. README.md is an ordinary, explicitly opened page—not an
+      implicit directory landing page. Use the document’s H1 as its user-facing title; the
+      filename and extension provide its stable route identity.
     </aside>
     <p class="principle"><strong>Selected direction:</strong> A · Native reader. Render Markdown
     in the product’s reading surface, with the same Contents and Details controls as HTML pages.
