@@ -88,6 +88,9 @@
       .note { min-height: 78px; padding: 13px 14px; border: 1px solid #e0e4e1; border-radius: 7px; background: #fafbfa; }
       .note h3 { margin: 0 0 5px; color: #45524d; font-size: 10px; font-weight: 650; }
       .note p { margin: 0; color: #78827f; font-size: 10px; line-height: 1.55; }
+      .route-note { margin-top: 13px; padding: 14px 16px; border: 1px solid #dfe5e1; border-radius: 7px; background: #f8faf8; color: #64706b; font-size: 11px; line-height: 1.65; }
+      .route-note strong { color: #34443d; font-weight: 630; }
+      .route-note code { color: #3d5148; font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
       .principle { margin-top: 30px; padding-top: 17px; border-top: 1px solid #dfe3e0; color: #56635e; font-size: 12px; line-height: 1.65; }
       .principle strong { color: #293a34; font-weight: 620; }
       @media (max-width: 950px) {
@@ -427,9 +430,17 @@ flowchart LR
         </div>
       </div>
     </section>
-    <p class="principle"><strong>Recommended starting point:</strong> A as the default reading
-    experience, with C’s lightweight “Source” action available on demand. Keep HTML artifacts in
-    their current browser-rendered view; give each indexed format the renderer it needs.</p>
+    <aside class="route-note">
+      <strong>Route proposal:</strong> A Markdown file is an ordinary, explicitly opened page—not
+      an implicit directory landing page. Keep <code>README.md</code> addressable as
+      <code>/README.md</code>. Preserve the existing HTML route behavior while retaining the
+      Markdown extension, so <code>foo.html → /foo</code> and <code>foo.md → /foo.md</code> remain
+      distinct pages and can coexist.
+    </aside>
+    <p class="principle"><strong>Selected direction:</strong> A · Native reader. Render Markdown
+    in the product’s reading surface, with the same Contents and Details controls as HTML pages.
+    Keep HTML artifacts in their current browser-rendered view; choose a renderer based on each
+    indexed document’s format.</p>
   </main>
   <script>
       const tabs = [...document.querySelectorAll('.concept-tab')]
